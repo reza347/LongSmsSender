@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Purple background -->
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="
+        M18,4
+        H90
+        C97.7,4 104,10.3 104,18
+        V90
+        C104,97.7 97.7,104 90,104
+        H18
+        C10.3,104 4,97.7 4,90
+        V18
+        C4,10.3 10.3,4 18,4
+        Z" />
+
+    <!-- White message bubble -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+        M27,25
+        H81
+        C88,25 93,30 93,37
+        V70
+        C93,77 88,82 81,82
+        H50
+        L34,95
+        L36,82
+        H27
+        C20,82 15,77 15,70
+        V37
+        C15,30 20,25 27,25
+        Z" />
+
+    <!-- Text lines -->
+    <path
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M29,39 H78" />
+
+    <path
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M29,49 H78" />
+
+    <path
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M29,59 H69" />
+
+    <path
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M29,69 H60" />
+
+    <!-- Send arrow -->
+    <path
+        android:fillColor="#6D28D9"
+        android:pathData="
+        M65,62
+        L86,70
+        L65,78
+        L70,70
+        Z" />
+
+</vector>

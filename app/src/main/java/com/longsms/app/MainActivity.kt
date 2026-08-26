@@ -43,10 +43,9 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-private val Purple = Color(0xFF7C3AED)
-private val PurpleDark = Color(0xFF6D28D9)
-private val PurpleLight = Color(0xFF9B6CFF)
-private val SuccessGreen = Color(0xFF22C55E)
+private val Purple = Color(0xFF6D28D9)
+private val PurpleLight = Color(0xFF8B5CF6)
+private val Green = Color(0xFF22C55E)
 
 class MainActivity : ComponentActivity() {
 
@@ -55,7 +54,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val permissionLauncher =
+        val smsPermissionLauncher =
             registerForActivityResult(
                 ActivityResultContracts.RequestPermission()
             ) { granted ->
@@ -65,7 +64,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                     Toast.makeText(
                         this,
-                        "برای ارسال پیامک باید مجوز SMS را فعال کنید.",
+                        "برای ارسال پیام باید مجوز SMS فعال باشد.",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -85,10 +84,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     action()
                 } else {
-
                     pendingSmsAction = action
 
-                    permissionLauncher.launch(
+                    smsPermissionLauncher.launch(
                         Manifest.permission.SEND_SMS
                     )
                 }
@@ -97,7 +95,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class AppPage {
+private enum class Page {
     SEND,
     HISTORY,
     SETTINGS
@@ -107,7 +105,6 @@ private data class HistoryItem(
     val id: String,
     val phone: String,
     val message: String,
-    val parts: Int,
     val time: Long
 )
 
@@ -120,18 +117,30 @@ private class AppPrefs(context: Context) {
         )
 
     var darkTheme: Boolean
-        get() = prefs.getBoolean("dark_theme", false)
+        get() = prefs.getBoolean(
+            "dark_theme",
+            false
+        )
         set(value) {
             prefs.edit()
-                .putBoolean("dark_theme", value)
+                .putBoolean(
+                    "dark_theme",
+                    value
+                )
                 .apply()
         }
 
     var saveHistory: Boolean
-        get() = prefs.getBoolean("save_history", true)
+        get() = prefs.getBoolean(
+            "save_history",
+            true
+        )
         set(value) {
             prefs.edit()
-                .putBoolean("save_history", value)
+                .putBoolean(
+                    "save_history",
+                    value
+                )
                 .apply()
         }
 
@@ -153,28 +162,31 @@ private class AppPrefs(context: Context) {
 
         return try {
 
-            val array =
-                JSONArray(
-                    prefs.getString(
-                        "history",
-                        "[]"
-                    ) ?: "[]"
-                )
+            val json =
+                prefs.getString(
+                    "history",
+                    "[]"
+                ) ?: "[]"
+
+            val array = JSONArray(json)
 
             buildList {
 
                 for (i in 0 until array.length()) {
 
-                    val obj =
+                    val item =
                         array.getJSONObject(i)
 
                     add(
                         HistoryItem(
-                            id = obj.optString("id"),
-                            phone = obj.optString("phone"),
-                            message = obj.optString("message"),
-                            parts = obj.optInt("parts", 1),
-                            time = obj.optLong("time")
+                            id =
+                                item.optString("id"),
+                            phone =
+                                item.optString("phone"),
+                            message =
+                                item.optString("message"),
+                            time =
+                                item.optLong("time")
                         )
                     )
                 }
@@ -193,15 +205,29 @@ private class AppPrefs(context: Context) {
 
         items.take(100).forEach { item ->
 
-            val obj = JSONObject()
+            val json = JSONObject()
 
-            obj.put("id", item.id)
-            obj.put("phone", item.phone)
-            obj.put("message", item.message)
-            obj.put("parts", item.parts)
-            obj.put("time", item.time)
+            json.put(
+                "id",
+                item.id
+            )
 
-            array.put(obj)
+            json.put(
+                "phone",
+                item.phone
+            )
+
+            json.put(
+                "message",
+                item.message
+            )
+
+            json.put(
+                "time",
+                item.time
+            )
+
+            array.put(json)
         }
 
         prefs.edit()
@@ -215,11 +241,12 @@ private class AppPrefs(context: Context) {
 
 @Composable
 private fun LongSmsApp(
-    requestSmsPermissionAndRun:
+    requestSmsPermission:
         ((() -> Unit)) -> Unit
 ) {
 
-    val context = LocalContext.current
+    val context =
+        LocalContext.current
 
     val prefs =
         remember {
@@ -246,7 +273,7 @@ private fun LongSmsApp(
 
     var page by rememberSaveable {
         mutableStateOf(
-            AppPage.SEND
+            Page.SEND
         )
     }
 
@@ -264,10 +291,10 @@ private fun LongSmsApp(
 
             darkColorScheme(
                 primary = PurpleLight,
-                secondary = SuccessGreen,
-                background = Color(0xFF090B10),
-                surface = Color(0xFF15181D),
-                surfaceVariant = Color(0xFF20242A),
+                secondary = Green,
+                background = Color(0xFF090A0F),
+                surface = Color(0xFF15171C),
+                surfaceVariant = Color(0xFF202228),
                 onBackground = Color.White,
                 onSurface = Color.White
             )
@@ -275,13 +302,13 @@ private fun LongSmsApp(
         } else {
 
             lightColorScheme(
-                primary = PurpleDark,
-                secondary = SuccessGreen,
-                background = Color(0xFFF7F7FA),
+                primary = Purple,
+                secondary = Green,
+                background = Color(0xFFF6F6F8),
                 surface = Color.White,
-                surfaceVariant = Color(0xFFF0F0F5),
-                onBackground = Color(0xFF151518),
-                onSurface = Color(0xFF151518)
+                surfaceVariant = Color(0xFFF0F0F4),
+                onBackground = Color(0xFF151515),
+                onSurface = Color(0xFF151515)
             )
         }
 
@@ -309,13 +336,13 @@ private fun LongSmsApp(
                             text =
                                 when (page) {
 
-                                    AppPage.SEND ->
+                                    Page.SEND ->
                                         "ارسال SMS طولانی"
 
-                                    AppPage.HISTORY ->
+                                    Page.HISTORY ->
                                         "تاریخچه پیام‌ها"
 
-                                    AppPage.SETTINGS ->
+                                    Page.SETTINGS ->
                                         "تنظیمات"
                                 },
                             modifier =
@@ -325,9 +352,9 @@ private fun LongSmsApp(
                                         horizontal = 20.dp,
                                         vertical = 18.dp
                                     ),
+                            fontSize = 22.sp,
                             fontWeight =
-                                FontWeight.Bold,
-                            fontSize = 22.sp
+                                FontWeight.Bold
                         )
                     }
                 },
@@ -338,10 +365,9 @@ private fun LongSmsApp(
 
                         NavigationBarItem(
                             selected =
-                                page == AppPage.SEND,
+                                page == Page.SEND,
                             onClick = {
-                                page =
-                                    AppPage.SEND
+                                page = Page.SEND
                             },
                             icon = {
                                 Icon(
@@ -356,11 +382,9 @@ private fun LongSmsApp(
 
                         NavigationBarItem(
                             selected =
-                                page ==
-                                    AppPage.HISTORY,
+                                page == Page.HISTORY,
                             onClick = {
-                                page =
-                                    AppPage.HISTORY
+                                page = Page.HISTORY
                             },
                             icon = {
                                 Icon(
@@ -375,11 +399,9 @@ private fun LongSmsApp(
 
                         NavigationBarItem(
                             selected =
-                                page ==
-                                    AppPage.SETTINGS,
+                                page == Page.SETTINGS,
                             onClick = {
-                                page =
-                                    AppPage.SETTINGS
+                                page = Page.SETTINGS
                             },
                             icon = {
                                 Icon(
@@ -410,18 +432,23 @@ private fun LongSmsApp(
 
                     when (page) {
 
-                        AppPage.SEND -> {
+                        Page.SEND -> {
 
                             SendScreen(
                                 saveHistory =
                                     saveHistory,
+
                                 confirmBeforeSend =
                                     confirmBeforeSend,
-                                onSent = {
+
+                                requestSmsPermission =
+                                    requestSmsPermission,
+
+                                onSent = { item ->
 
                                     history.add(
                                         0,
-                                        it
+                                        item
                                     )
 
                                     while (
@@ -435,17 +462,14 @@ private fun LongSmsApp(
                                     prefs.saveHistory(
                                         history
                                     )
-                                },
-                                requestSmsPermissionAndRun =
-                                    requestSmsPermissionAndRun
+                                }
                             )
                         }
 
-                        AppPage.HISTORY -> {
+                        Page.HISTORY -> {
 
                             HistoryScreen(
-                                history =
-                                    history,
+                                history = history,
                                 onClear = {
 
                                     history.clear()
@@ -457,26 +481,35 @@ private fun LongSmsApp(
                             )
                         }
 
-                        AppPage.SETTINGS -> {
+                        Page.SETTINGS -> {
 
                             SettingsScreen(
+
                                 darkTheme =
                                     darkTheme,
+
                                 onDarkThemeChanged = {
 
                                     darkTheme = it
-                                    prefs.darkTheme = it
+
+                                    prefs.darkTheme =
+                                        it
                                 },
+
                                 saveHistory =
                                     saveHistory,
+
                                 onSaveHistoryChanged = {
 
                                     saveHistory = it
+
                                     prefs.saveHistory =
                                         it
                                 },
+
                                 confirmBeforeSend =
                                     confirmBeforeSend,
+
                                 onConfirmBeforeSendChanged = {
 
                                     confirmBeforeSend =
@@ -498,9 +531,9 @@ private fun LongSmsApp(
 private fun SendScreen(
     saveHistory: Boolean,
     confirmBeforeSend: Boolean,
-    onSent: (HistoryItem) -> Unit,
-    requestSmsPermissionAndRun:
-        ((() -> Unit)) -> Unit
+    requestSmsPermission:
+        ((() -> Unit)) -> Unit,
+    onSent: (HistoryItem) -> Unit
 ) {
 
     val context =
@@ -522,22 +555,9 @@ private fun SendScreen(
         mutableStateOf("")
     }
 
-    var showPreview by remember {
+    var showConfirm by remember {
         mutableStateOf(false)
     }
-
-    val parts =
-        remember(message) {
-            SmsSender.divideMessage(
-                message
-            )
-        }
-
-    val partCount =
-        if (message.isBlank())
-            0
-        else
-            parts.size.coerceAtLeast(1)
 
     val contactPicker =
         rememberLauncherForActivityResult(
@@ -550,59 +570,59 @@ private fun SendScreen(
                 Activity.RESULT_OK
             ) {
 
-                result.data
-                    ?.data
-                    ?.let { uri ->
+                val uri =
+                    result.data?.data
 
-                        context
-                            .contentResolver
-                            .query(
-                                uri,
-                                arrayOf(
-                                    ContactsContract
-                                        .CommonDataKinds
-                                        .Phone
-                                        .NUMBER
-                                ),
-                                null,
-                                null,
-                                null
-                            )
-                            ?.use { cursor ->
+                if (uri != null) {
 
-                                if (
-                                    cursor.moveToFirst()
-                                ) {
+                    context.contentResolver
+                        .query(
+                            uri,
+                            arrayOf(
+                                ContactsContract
+                                    .CommonDataKinds
+                                    .Phone
+                                    .NUMBER
+                            ),
+                            null,
+                            null,
+                            null
+                        )
+                        ?.use { cursor ->
 
-                                    val index =
+                            if (
+                                cursor.moveToFirst()
+                            ) {
+
+                                val index =
+                                    cursor.getColumnIndex(
+                                        ContactsContract
+                                            .CommonDataKinds
+                                            .Phone
+                                            .NUMBER
+                                    )
+
+                                if (index >= 0) {
+
+                                    phone =
                                         cursor
-                                            .getColumnIndex(
-                                                ContactsContract
-                                                    .CommonDataKinds
-                                                    .Phone
-                                                    .NUMBER
+                                            .getString(
+                                                index
                                             )
-
-                                    if (index >= 0) {
-
-                                        phone =
-                                            cursor
-                                                .getString(
-                                                    index
-                                                )
-                                                .orEmpty()
-                                    }
+                                            .orEmpty()
                                 }
                             }
-                    }
+                        }
+                }
             }
         }
 
-    fun sendNow() {
+    fun sendMessage() {
 
         if (phone.trim().isBlank()) {
 
             scope.launch {
+
                 snackbar.showSnackbar(
                     "شماره گیرنده را وارد کنید."
                 )
@@ -614,6 +634,7 @@ private fun SendScreen(
         if (message.isBlank()) {
 
             scope.launch {
+
                 snackbar.showSnackbar(
                     "متن پیام را وارد کنید."
                 )
@@ -622,15 +643,14 @@ private fun SendScreen(
             return
         }
 
-        requestSmsPermissionAndRun {
+        requestSmsPermission {
 
             try {
 
-                val sentParts =
-                    SmsSender.send(
-                        phone,
-                        message
-                    )
+                LongSmsSender.send(
+                    phone = phone,
+                    message = message
+                )
 
                 if (saveHistory) {
 
@@ -640,12 +660,13 @@ private fun SendScreen(
                                 UUID
                                     .randomUUID()
                                     .toString(),
+
                             phone =
                                 phone.trim(),
+
                             message =
                                 message,
-                            parts =
-                                sentParts,
+
                             time =
                                 System
                                     .currentTimeMillis()
@@ -656,7 +677,7 @@ private fun SendScreen(
                 scope.launch {
 
                     snackbar.showSnackbar(
-                        "پیام $sentParts بخشی ارسال شد."
+                        "پیام با موفقیت ارسال شد."
                     )
                 }
 
@@ -666,7 +687,7 @@ private fun SendScreen(
 
                     snackbar.showSnackbar(
                         e.message
-                            ?: "ارسال ناموفق بود."
+                            ?: "ارسال پیام ناموفق بود."
                     )
                 }
             }
@@ -704,24 +725,30 @@ private fun SendScreen(
 
                     OutlinedTextField(
                         value = phone,
+
                         onValueChange = {
                             phone = it
                         },
+
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .padding(12.dp),
+
                         label = {
                             Text(
                                 "شماره گیرنده"
                             )
                         },
+
                         placeholder = {
                             Text(
-                                "مثلاً 09123456789"
+                                "09123456789"
                             )
                         },
+
                         singleLine = true,
+
                         leadingIcon = {
 
                             Icon(
@@ -731,6 +758,7 @@ private fun SendScreen(
                                 null
                             )
                         },
+
                         trailingIcon = {
 
                             IconButton(
@@ -745,10 +773,9 @@ private fun SendScreen(
                                                 .CONTENT_URI
                                         )
 
-                                    contactPicker
-                                        .launch(
-                                            intent
-                                        )
+                                    contactPicker.launch(
+                                        intent
+                                    )
                                 }
                             ) {
 
@@ -760,11 +787,13 @@ private fun SendScreen(
                                 )
                             }
                         },
+
                         keyboardOptions =
                             KeyboardOptions(
                                 keyboardType =
                                     KeyboardType.Phone
                             ),
+
                         shape =
                             RoundedCornerShape(
                                 14.dp
@@ -805,23 +834,28 @@ private fun SendScreen(
 
                         OutlinedTextField(
                             value = message,
+
                             onValueChange = {
                                 message = it
                             },
+
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
                                     .heightIn(
-                                        min = 220.dp
+                                        min = 260.dp
                                     ),
+
                             placeholder = {
 
                                 Text(
-                                    "پیام طولانی خود را اینجا بنویسید..."
+                                    "متن طولانی خود را اینجا بنویسید..."
                                 )
                             },
-                            minLines = 8,
-                            maxLines = 16,
+
+                            minLines = 10,
+                            maxLines = 20,
+
                             shape =
                                 RoundedCornerShape(
                                     14.dp
@@ -830,13 +864,14 @@ private fun SendScreen(
 
                         Spacer(
                             Modifier.height(
-                                8.dp
+                                10.dp
                             )
                         )
 
                         Row(
                             modifier =
                                 Modifier.fillMaxWidth(),
+
                             horizontalArrangement =
                                 Arrangement
                                     .SpaceBetween
@@ -848,18 +883,11 @@ private fun SendScreen(
                             )
 
                             Text(
-                                "$partCount بخش SMS",
+                                "پیام طولانی",
+                                fontSize = 13.sp,
                                 fontWeight =
                                     FontWeight.Bold,
-                                color =
-                                    if (
-                                        partCount > 0
-                                    )
-                                        SuccessGreen
-                                    else
-                                        MaterialTheme
-                                            .colorScheme
-                                            .onSurface
+                                color = Green
                             )
                         }
                     }
@@ -869,110 +897,49 @@ private fun SendScreen(
             item {
 
                 ElevatedCard(
-                    modifier =
-                        Modifier.fillMaxWidth(),
+                    colors =
+                        CardDefaults
+                            .elevatedCardColors(
+                                containerColor =
+                                    Green.copy(
+                                        alpha = 0.10f
+                                    )
+                            ),
+
                     shape =
                         RoundedCornerShape(
                             18.dp
                         )
                 ) {
 
-                    Column(
+                    Row(
                         modifier =
                             Modifier.padding(
                                 16.dp
-                            )
+                            ),
+
+                        verticalAlignment =
+                            Alignment.CenterVertically
                     ) {
 
-                        Row(
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
-
-                            Icon(
-                                Icons
-                                    .Outlined
-                                    .Message,
-                                null,
-                                tint =
-                                    PurpleLight
-                            )
-
-                            Spacer(
-                                Modifier.width(
-                                    8.dp
-                                )
-                            )
-
-                            Text(
-                                "تعداد پیام‌های ارسالی: $partCount",
-                                fontWeight =
-                                    FontWeight.Bold
-                            )
-                        }
+                        Icon(
+                            Icons
+                                .Outlined
+                                .Message,
+                            null,
+                            tint = Green
+                        )
 
                         Spacer(
-                            Modifier.height(
-                                14.dp
+                            Modifier.width(
+                                10.dp
                             )
                         )
 
-                        Row(
-                            modifier =
-                                Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    6.dp
-                                )
-                        ) {
-
-                            repeat(6) { index ->
-
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .weight(1f)
-                                            .height(
-                                                7.dp
-                                            )
-                                            .background(
-                                                if (
-                                                    index <
-                                                    partCount
-                                                        .coerceAtMost(
-                                                            6
-                                                        )
-                                                )
-                                                    SuccessGreen
-                                                else
-                                                    MaterialTheme
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .copy(
-                                                            alpha =
-                                                                0.12f
-                                                        ),
-                                                RoundedCornerShape(
-                                                    50.dp
-                                                )
-                                            )
-                                )
-                            }
-                        }
-
-                        if (partCount > 6) {
-
-                            Spacer(
-                                Modifier.height(
-                                    8.dp
-                                )
-                            )
-
-                            Text(
-                                "+ ${partCount - 6} بخش دیگر",
-                                fontSize = 12.sp
-                            )
-                        }
+                        Text(
+                            "متن بلند به‌صورت پیام SMS چندبخشی استاندارد ارسال می‌شود و در گوشی گیرنده معمولاً به شکل یک پیام بلند نمایش داده می‌شود.",
+                            fontSize = 13.sp
+                        )
                     }
                 }
             }
@@ -983,34 +950,56 @@ private fun SendScreen(
                     onClick = {
 
                         if (
-                            confirmBeforeSend &&
-                            phone.isNotBlank() &&
-                            message.isNotBlank()
+                            phone.isBlank()
                         ) {
 
-                            showPreview =
-                                true
+                            scope.launch {
+
+                                snackbar.showSnackbar(
+                                    "شماره گیرنده را وارد کنید."
+                                )
+                            }
+
+                        } else if (
+                            message.isBlank()
+                        ) {
+
+                            scope.launch {
+
+                                snackbar.showSnackbar(
+                                    "متن پیام را وارد کنید."
+                                )
+                            }
+
+                        } else if (
+                            confirmBeforeSend
+                        ) {
+
+                            showConfirm = true
 
                         } else {
 
-                            sendNow()
+                            sendMessage()
                         }
                     },
+
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .height(
                                 58.dp
                             ),
+
                     shape =
                         RoundedCornerShape(
                             16.dp
                         ),
+
                     colors =
                         ButtonDefaults
                             .buttonColors(
                                 containerColor =
-                                    PurpleDark
+                                    Purple
                             )
                 ) {
 
@@ -1036,53 +1025,9 @@ private fun SendScreen(
 
             item {
 
-                ElevatedCard(
-                    colors =
-                        CardDefaults
-                            .elevatedCardColors(
-                                containerColor =
-                                    SuccessGreen
-                                        .copy(
-                                            alpha =
-                                                0.10f
-                                        )
-                            )
-                ) {
-
-                    Row(
-                        modifier =
-                            Modifier.padding(
-                                14.dp
-                            )
-                    ) {
-
-                        Icon(
-                            Icons
-                                .Outlined
-                                .Info,
-                            null,
-                            tint =
-                                SuccessGreen
-                        )
-
-                        Spacer(
-                            Modifier.width(
-                                10.dp
-                            )
-                        )
-
-                        Text(
-                            "پیام طولانی به‌صورت خودکار به چند SMS تقسیم می‌شود. ممکن است اپراتور هزینه هر بخش را جداگانه حساب کند.",
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-            }
-
-            item {
                 Spacer(
                     Modifier.height(
-                        10.dp
+                        12.dp
                     )
                 )
             }
@@ -1090,6 +1035,7 @@ private fun SendScreen(
 
         SnackbarHost(
             hostState = snackbar,
+
             modifier =
                 Modifier.align(
                     Alignment.BottomCenter
@@ -1097,43 +1043,43 @@ private fun SendScreen(
         )
     }
 
-    if (showPreview) {
+    if (showConfirm) {
 
         AlertDialog(
+
             onDismissRequest = {
-                showPreview = false
+                showConfirm = false
             },
+
             icon = {
 
                 Icon(
                     Icons
                         .Outlined
-                        .Preview,
+                        .Send,
                     null
                 )
             },
+
             title = {
 
                 Text(
-                    "پیش‌نمایش ارسال"
+                    "ارسال پیام؟"
                 )
             },
+
             text = {
 
                 Column {
 
                     Text(
-                        "گیرنده: $phone"
-                    )
-
-                    Spacer(
-                        Modifier.height(
-                            6.dp
-                        )
+                        "گیرنده:"
                     )
 
                     Text(
-                        "تعداد بخش‌ها: $partCount"
+                        phone,
+                        fontWeight =
+                            FontWeight.Bold
                     )
 
                     Spacer(
@@ -1143,39 +1089,53 @@ private fun SendScreen(
                     )
 
                     Text(
+                        "متن پیام:"
+                    )
+
+                    Spacer(
+                        Modifier.height(
+                            4.dp
+                        )
+                    )
+
+                    Text(
                         message,
                         maxLines = 8
                     )
                 }
             },
+
             confirmButton = {
 
                 Button(
                     onClick = {
 
-                        showPreview =
+                        showConfirm =
                             false
 
-                        sendNow()
+                        sendMessage()
                     }
                 ) {
 
                     Text(
-                        "ارسال ($partCount)"
+                        "ارسال"
                     )
                 }
             },
+
             dismissButton = {
 
                 TextButton(
                     onClick = {
 
-                        showPreview =
+                        showConfirm =
                             false
                     }
                 ) {
 
-                    Text("انصراف")
+                    Text(
+                        "انصراف"
+                    )
                 }
             }
         )
@@ -1197,6 +1157,7 @@ private fun HistoryScreen(
         Box(
             modifier =
                 Modifier.fillMaxSize(),
+
             contentAlignment =
                 Alignment.Center
         ) {
@@ -1211,9 +1172,10 @@ private fun HistoryScreen(
                         .Outlined
                         .History,
                     null,
+
                     modifier =
                         Modifier.size(
-                            70.dp
+                            68.dp
                         )
                 )
 
@@ -1224,7 +1186,7 @@ private fun HistoryScreen(
                 )
 
                 Text(
-                    "هنوز پیامی در تاریخچه نیست."
+                    "هنوز پیامی ارسال نشده است."
                 )
             }
         }
@@ -1238,6 +1200,7 @@ private fun HistoryScreen(
                     .padding(
                         horizontal = 16.dp
                     ),
+
             verticalArrangement =
                 Arrangement.spacedBy(
                     10.dp
@@ -1249,22 +1212,23 @@ private fun HistoryScreen(
                 Row(
                     modifier =
                         Modifier.fillMaxWidth(),
+
                     horizontalArrangement =
                         Arrangement.SpaceBetween,
+
                     verticalAlignment =
                         Alignment.CenterVertically
                 ) {
 
                     Text(
-                        "${history.size} پیام ذخیره شده",
+                        "${history.size} پیام",
                         fontWeight =
                             FontWeight.Bold
                     )
 
                     TextButton(
                         onClick = {
-                            confirmClear =
-                                true
+                            confirmClear = true
                         }
                     ) {
 
@@ -1273,6 +1237,12 @@ private fun HistoryScreen(
                                 .Outlined
                                 .DeleteSweep,
                             null
+                        )
+
+                        Spacer(
+                            Modifier.width(
+                                4.dp
+                            )
                         )
 
                         Text(
@@ -1292,6 +1262,7 @@ private fun HistoryScreen(
                 ElevatedCard(
                     modifier =
                         Modifier.fillMaxWidth(),
+
                     shape =
                         RoundedCornerShape(
                             16.dp
@@ -1305,38 +1276,53 @@ private fun HistoryScreen(
                             )
                     ) {
 
-                        Text(
-                            item.phone,
-                            fontWeight =
-                                FontWeight.Bold
-                        )
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth(),
+
+                            horizontalArrangement =
+                                Arrangement
+                                    .SpaceBetween
+                        ) {
+
+                            Text(
+                                item.phone,
+                                fontWeight =
+                                    FontWeight.Bold
+                            )
+
+                            Icon(
+                                Icons
+                                    .Outlined
+                                    .CheckCircle,
+                                null,
+                                tint = Green
+                            )
+                        }
 
                         Spacer(
                             Modifier.height(
-                                5.dp
+                                6.dp
                             )
                         )
 
                         Text(
                             item.message,
-                            maxLines = 4
+                            maxLines = 5
                         )
 
                         Spacer(
                             Modifier.height(
-                                8.dp
+                                10.dp
                             )
                         )
 
                         Text(
-                            "${item.parts} بخش • ${
-                                formatDate(
-                                    item.time
-                                )
-                            }",
+                            formatDate(
+                                item.time
+                            ),
                             fontSize = 12.sp,
-                            color =
-                                SuccessGreen
+                            color = Green
                         )
                     }
                 }
@@ -1347,20 +1333,25 @@ private fun HistoryScreen(
     if (confirmClear) {
 
         AlertDialog(
+
             onDismissRequest = {
-                confirmClear =
-                    false
+                confirmClear = false
             },
+
             title = {
+
                 Text(
                     "پاک کردن تاریخچه؟"
                 )
             },
+
             text = {
+
                 Text(
-                    "تمام پیام‌های ذخیره‌شده پاک می‌شوند."
+                    "تمام پیام‌های ذخیره شده پاک خواهند شد."
                 )
             },
+
             confirmButton = {
 
                 Button(
@@ -1378,6 +1369,7 @@ private fun HistoryScreen(
                     )
                 }
             },
+
             dismissButton = {
 
                 TextButton(
@@ -1402,9 +1394,11 @@ private fun SettingsScreen(
     darkTheme: Boolean,
     onDarkThemeChanged:
         (Boolean) -> Unit,
+
     saveHistory: Boolean,
     onSaveHistoryChanged:
         (Boolean) -> Unit,
+
     confirmBeforeSend: Boolean,
     onConfirmBeforeSendChanged:
         (Boolean) -> Unit
@@ -1417,6 +1411,7 @@ private fun SettingsScreen(
                 .padding(
                     horizontal = 16.dp
                 ),
+
         verticalArrangement =
             Arrangement.spacedBy(
                 14.dp
@@ -1426,10 +1421,10 @@ private fun SettingsScreen(
         item {
 
             Text(
-                "تم برنامه",
+                "انتخاب تم",
+                fontSize = 18.sp,
                 fontWeight =
-                    FontWeight.Bold,
-                fontSize = 18.sp
+                    FontWeight.Bold
             )
 
             Spacer(
@@ -1441,6 +1436,7 @@ private fun SettingsScreen(
             Row(
                 modifier =
                     Modifier.fillMaxWidth(),
+
                 horizontalArrangement =
                     Arrangement.spacedBy(
                         10.dp
@@ -1455,22 +1451,17 @@ private fun SettingsScreen(
                                 false
                             )
                         },
+
                         modifier =
                             Modifier
                                 .weight(1f)
-                                .height(70.dp),
-                        colors =
-                            ButtonDefaults
-                                .buttonColors(
-                                    containerColor =
-                                        PurpleDark
-                                )
+                                .height(70.dp)
                     ) {
 
                         Icon(
                             Icons
                                 .Outlined
-                                .Brightness7,
+                                .LightMode,
                             null
                         )
 
@@ -1493,6 +1484,7 @@ private fun SettingsScreen(
                                 false
                             )
                         },
+
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -1502,7 +1494,7 @@ private fun SettingsScreen(
                         Icon(
                             Icons
                                 .Outlined
-                                .Brightness7,
+                                .LightMode,
                             null
                         )
 
@@ -1526,16 +1518,11 @@ private fun SettingsScreen(
                                 true
                             )
                         },
+
                         modifier =
                             Modifier
                                 .weight(1f)
-                                .height(70.dp),
-                        colors =
-                            ButtonDefaults
-                                .buttonColors(
-                                    containerColor =
-                                        PurpleDark
-                                )
+                                .height(70.dp)
                     ) {
 
                         Icon(
@@ -1564,6 +1551,7 @@ private fun SettingsScreen(
                                 true
                             )
                         },
+
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -1596,10 +1584,13 @@ private fun SettingsScreen(
             SettingCard(
                 title =
                     "ذخیره تاریخچه",
+
                 subtitle =
-                    "پیام‌های ارسال‌شده در برنامه ذخیره شوند.",
+                    "پیام‌های ارسال شده داخل برنامه ذخیره شوند.",
+
                 checked =
                     saveHistory,
+
                 onCheckedChange =
                     onSaveHistoryChanged
             )
@@ -1610,10 +1601,13 @@ private fun SettingsScreen(
             SettingCard(
                 title =
                     "تأیید قبل از ارسال",
+
                 subtitle =
-                    "قبل از ارسال تعداد بخش‌های SMS نمایش داده شود.",
+                    "قبل از ارسال، متن و شماره گیرنده نمایش داده شود.",
+
                 checked =
                     confirmBeforeSend,
+
                 onCheckedChange =
                     onConfirmBeforeSendChanged
             )
@@ -1624,64 +1618,11 @@ private fun SettingsScreen(
             ElevatedCard(
                 modifier =
                     Modifier.fillMaxWidth(),
+
                 shape =
                     RoundedCornerShape(
                         18.dp
                     )
-            ) {
-
-                Column(
-                    modifier =
-                        Modifier.padding(
-                            16.dp
-                        )
-                ) {
-
-                    Row(
-                        verticalAlignment =
-                            Alignment.CenterVertically
-                    ) {
-
-                        Icon(
-                            Icons
-                                .Outlined
-                                .Shield,
-                            null,
-                            tint =
-                                SuccessGreen
-                        )
-
-                        Spacer(
-                            Modifier.width(
-                                8.dp
-                            )
-                        )
-
-                        Text(
-                            "ارسال پیام",
-                            fontWeight =
-                                FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(
-                        Modifier.height(
-                            8.dp
-                        )
-                    )
-
-                    Text(
-                        "پیام‌ها با سیستم SMS خود اندروید و سیم‌کارت گوشی ارسال می‌شوند."
-                    )
-                }
-            }
-        }
-
-        item {
-
-            ElevatedCard(
-                modifier =
-                    Modifier.fillMaxWidth()
             ) {
 
                 Row(
@@ -1689,6 +1630,7 @@ private fun SettingsScreen(
                         Modifier.padding(
                             16.dp
                         ),
+
                     verticalAlignment =
                         Alignment.CenterVertically
                 ) {
@@ -1696,10 +1638,9 @@ private fun SettingsScreen(
                     Icon(
                         Icons
                             .Outlined
-                            .Info,
+                            .Message,
                         null,
-                        tint =
-                            PurpleLight
+                        tint = PurpleLight
                     )
 
                     Spacer(
@@ -1717,7 +1658,7 @@ private fun SettingsScreen(
                         )
 
                         Text(
-                            "نسخه 1.0",
+                            "نسخه 1.1",
                             fontSize = 12.sp
                         )
                     }
@@ -1739,6 +1680,7 @@ private fun SettingCard(
     ElevatedCard(
         modifier =
             Modifier.fillMaxWidth(),
+
         shape =
             RoundedCornerShape(
                 18.dp
@@ -1752,6 +1694,7 @@ private fun SettingCard(
                     .padding(
                         16.dp
                     ),
+
             verticalAlignment =
                 Alignment.CenterVertically
         ) {
@@ -1767,6 +1710,12 @@ private fun SettingCard(
                         FontWeight.Bold
                 )
 
+                Spacer(
+                    Modifier.height(
+                        4.dp
+                    )
+                )
+
                 Text(
                     subtitle,
                     fontSize = 12.sp
@@ -1774,8 +1723,7 @@ private fun SettingCard(
             }
 
             Switch(
-                checked =
-                    checked,
+                checked = checked,
                 onCheckedChange =
                     onCheckedChange
             )
@@ -1787,46 +1735,21 @@ private fun formatDate(
     time: Long
 ): String {
 
-    if (time <= 0) return ""
-
     return SimpleDateFormat(
-        "yyyy/MM/dd HH:mm",
+        "yyyy/MM/dd - HH:mm",
         Locale("fa", "IR")
     ).format(
         Date(time)
     )
 }
 
-private object SmsSender {
-
-    @Suppress("DEPRECATION")
-    fun divideMessage(
-        message: String
-    ): List<String> {
-
-        if (message.isBlank()) {
-            return emptyList()
-        }
-
-        return try {
-
-            SmsManager
-                .getDefault()
-                .divideMessage(
-                    message
-                )
-
-        } catch (_: Exception) {
-
-            listOf(message)
-        }
-    }
+private object LongSmsSender {
 
     @Suppress("DEPRECATION")
     fun send(
         phone: String,
         message: String
-    ): Int {
+    ) {
 
         val destination =
             phone.filter {
@@ -1837,7 +1760,7 @@ private object SmsSender {
         require(
             destination.isNotBlank()
         ) {
-            "شماره معتبر نیست."
+            "شماره گیرنده معتبر نیست."
         }
 
         require(
@@ -1846,36 +1769,35 @@ private object SmsSender {
             "متن پیام خالی است."
         }
 
-        val manager =
+        val smsManager =
             SmsManager.getDefault()
 
         val parts =
-            manager.divideMessage(
+            smsManager.divideMessage(
                 message
             )
 
-        if (parts.size <= 1) {
+        if (parts.size > 1) {
 
-            manager.sendTextMessage(
-                destination,
-                null,
-                message,
-                null,
-                null
-            )
+            smsManager
+                .sendMultipartTextMessage(
+                    destination,
+                    null,
+                    ArrayList(parts),
+                    null,
+                    null
+                )
 
-            return 1
+        } else {
+
+            smsManager
+                .sendTextMessage(
+                    destination,
+                    null,
+                    message,
+                    null,
+                    null
+                )
         }
-
-        manager
-            .sendMultipartTextMessage(
-                destination,
-                null,
-                ArrayList(parts),
-                null,
-                null
-            )
-
-        return parts.size
     }
 }

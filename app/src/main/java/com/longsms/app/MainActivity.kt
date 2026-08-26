@@ -79,7 +79,6 @@ class MainActivity : ComponentActivity() {
             }
 
         setContent {
-
             SmsLongApp { action ->
 
                 if (
@@ -91,7 +90,6 @@ class MainActivity : ComponentActivity() {
                     action()
                 } else {
                     pendingSmsAction = action
-
                     smsPermissionLauncher.launch(
                         Manifest.permission.SEND_SMS
                     )
@@ -138,513 +136,230 @@ private class AppPrefs(context: Context) {
         )
 
     var darkTheme: Boolean
-        get() =
-            prefs.getBoolean(
-                "dark_theme",
-                false
-            )
+        get() = prefs.getBoolean("dark_theme", false)
         set(value) {
-            prefs.edit()
-                .putBoolean(
-                    "dark_theme",
-                    value
-                )
-                .apply()
+            prefs.edit().putBoolean("dark_theme", value).apply()
         }
 
     var confirmBeforeSend: Boolean
-        get() =
-            prefs.getBoolean(
-                "confirm_before_send",
-                true
-            )
+        get() = prefs.getBoolean("confirm_before_send", true)
         set(value) {
-            prefs.edit()
-                .putBoolean(
-                    "confirm_before_send",
-                    value
-                )
-                .apply()
+            prefs.edit().putBoolean("confirm_before_send", value).apply()
         }
 
     var selectedSimId: Int
-        get() =
-            prefs.getInt(
-                "selected_sim",
-                SubscriptionManager.INVALID_SUBSCRIPTION_ID
-            )
+        get() = prefs.getInt(
+            "selected_sim",
+            SubscriptionManager.INVALID_SUBSCRIPTION_ID
+        )
         set(value) {
-            prefs.edit()
-                .putInt(
-                    "selected_sim",
-                    value
-                )
-                .apply()
+            prefs.edit().putInt("selected_sim", value).apply()
         }
 
     fun loadGroups(): List<ContactGroup> {
-
         return try {
-
-            val groupsArray =
-                JSONArray(
-                    prefs.getString(
-                        "groups",
-                        "[]"
-                    ) ?: "[]"
-                )
+            val groupsArray = JSONArray(
+                prefs.getString("groups", "[]") ?: "[]"
+            )
 
             buildList {
-
                 for (i in 0 until groupsArray.length()) {
+                    val groupJson = groupsArray.getJSONObject(i)
+                    val membersArray = groupJson.optJSONArray("members") ?: JSONArray()
 
-                    val groupJson =
-                        groupsArray.getJSONObject(i)
-
-                    val membersArray =
-                        groupJson.optJSONArray("members")
-                            ?: JSONArray()
-
-                    val members =
-                        buildList {
-
-                            for (
-                                j in 0 until
-                                    membersArray.length()
-                            ) {
-
-                                val member =
-                                    membersArray
-                                        .getJSONObject(j)
-
-                                add(
-                                    GroupMember(
-                                        name =
-                                            member
-                                                .optString(
-                                                    "name"
-                                                ),
-                                        phone =
-                                            member
-                                                .optString(
-                                                    "phone"
-                                                )
-                                    )
+                    val members = buildList {
+                        for (j in 0 until membersArray.length()) {
+                            val member = membersArray.getJSONObject(j)
+                            add(
+                                GroupMember(
+                                    name = member.optString("name"),
+                                    phone = member.optString("phone")
                                 )
-                            }
+                            )
                         }
+                    }
 
                     add(
                         ContactGroup(
-                            id =
-                                groupJson
-                                    .optString("id"),
-                            name =
-                                groupJson
-                                    .optString("name"),
-                            members =
-                                members
+                            id = groupJson.optString("id"),
+                            name = groupJson.optString("name"),
+                            members = members
                         )
                     )
                 }
             }
-
         } catch (_: Exception) {
             emptyList()
         }
     }
 
-    fun saveGroups(
-        groups: List<ContactGroup>
-    ) {
-
+    fun saveGroups(groups: List<ContactGroup>) {
         val groupsArray = JSONArray()
 
         groups.forEach { group ->
-
             val groupJson = JSONObject()
+            groupJson.put("id", group.id)
+            groupJson.put("name", group.name)
 
-            groupJson.put(
-                "id",
-                group.id
-            )
-
-            groupJson.put(
-                "name",
-                group.name
-            )
-
-            val membersArray =
-                JSONArray()
-
+            val membersArray = JSONArray()
             group.members.forEach { member ->
-
-                val memberJson =
-                    JSONObject()
-
-                memberJson.put(
-                    "name",
-                    member.name
-                )
-
-                memberJson.put(
-                    "phone",
-                    member.phone
-                )
-
-                membersArray.put(
-                    memberJson
-                )
+                val memberJson = JSONObject()
+                memberJson.put("name", member.name)
+                memberJson.put("phone", member.phone)
+                membersArray.put(memberJson)
             }
 
-            groupJson.put(
-                "members",
-                membersArray
-            )
-
-            groupsArray.put(
-                groupJson
-            )
+            groupJson.put("members", membersArray)
+            groupsArray.put(groupJson)
         }
 
-        prefs.edit()
-            .putString(
-                "groups",
-                groupsArray.toString()
-            )
-            .apply()
+        prefs.edit().putString("groups", groupsArray.toString()).apply()
     }
 }
 
 @Composable
 private fun SmsLongApp(
-    requestSmsPermission:
-        ((() -> Unit)) -> Unit
+    requestSmsPermission: ((() -> Unit)) -> Unit
 ) {
+    val context = LocalContext.current
+    val prefs = remember { AppPrefs(context) }
 
-    val context =
-        LocalContext.current
+    var darkTheme by remember { mutableStateOf(prefs.darkTheme) }
+    var confirmBeforeSend by remember { mutableStateOf(prefs.confirmBeforeSend) }
+    var selectedSimId by remember { mutableIntStateOf(prefs.selectedSimId) }
+    var page by rememberSaveable { mutableStateOf(Page.SEND) }
+    var showAbout by remember { mutableStateOf(false) }
 
-    val prefs =
-        remember {
-            AppPrefs(context)
-        }
+    val groups = remember {
+        mutableStateListOf(*prefs.loadGroups().toTypedArray())
+    }
 
-    var darkTheme by remember {
-        mutableStateOf(
-            prefs.darkTheme
+    val colors = if (darkTheme) {
+        darkColorScheme(
+            primary = AppPurpleLight,
+            background = Color(0xFF090A0F),
+            surface = Color(0xFF15171D),
+            surfaceVariant = Color(0xFF202228),
+            onBackground = Color.White,
+            onSurface = Color.White
+        )
+    } else {
+        lightColorScheme(
+            primary = AppPurple,
+            background = Color(0xFFF7F7F9),
+            surface = Color.White,
+            surfaceVariant = Color(0xFFF1EFF7),
+            onBackground = Color(0xFF161616),
+            onSurface = Color(0xFF161616)
         )
     }
 
-    var confirmBeforeSend by remember {
-        mutableStateOf(
-            prefs.confirmBeforeSend
-        )
-    }
-
-    var selectedSimId by remember {
-        mutableIntStateOf(
-            prefs.selectedSimId
-        )
-    }
-
-    var page by rememberSaveable {
-        mutableStateOf(
-            Page.SEND
-        )
-    }
-
-    var showAbout by remember {
-        mutableStateOf(false)
-    }
-
-    val groups =
-        remember {
-            mutableStateListOf(
-                *prefs
-                    .loadGroups()
-                    .toTypedArray()
-            )
-        }
-
-    val colors =
-        if (darkTheme) {
-
-            darkColorScheme(
-                primary =
-                    AppPurpleLight,
-                background =
-                    Color(0xFF090A0F),
-                surface =
-                    Color(0xFF15171D),
-                surfaceVariant =
-                    Color(0xFF202228),
-                onBackground =
-                    Color.White,
-                onSurface =
-                    Color.White
-            )
-
-        } else {
-
-            lightColorScheme(
-                primary =
-                    AppPurple,
-                background =
-                    Color(0xFFF7F7F9),
-                surface =
-                    Color.White,
-                surfaceVariant =
-                    Color(0xFFF1EFF7),
-                onBackground =
-                    Color(0xFF161616),
-                onSurface =
-                    Color(0xFF161616)
-            )
-        }
-
-    val activity =
-        context as? Activity
+    val activity = context as? Activity
 
     SideEffect {
-
         activity?.let {
+            it.window.statusBarColor = colors.background.toArgb()
+            it.window.navigationBarColor = colors.background.toArgb()
 
-            it.window.statusBarColor =
-                colors.background.toArgb()
-
-            it.window.navigationBarColor =
-                colors.background.toArgb()
-
-            WindowCompat
-                .getInsetsController(
-                    it.window,
-                    it.window.decorView
-                )
-                .apply {
-
-                    isAppearanceLightStatusBars =
-                        !darkTheme
-
-                    isAppearanceLightNavigationBars =
-                        !darkTheme
-                }
+            WindowCompat.getInsetsController(
+                it.window,
+                it.window.decorView
+            ).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
         }
     }
 
-    MaterialTheme(
-        colorScheme = colors
-    ) {
-
+    MaterialTheme(colorScheme = colors) {
         CompositionLocalProvider(
-            LocalLayoutDirection provides
-                LayoutDirection.Rtl
+            LocalLayoutDirection provides LayoutDirection.Rtl
         ) {
-
             Scaffold(
-
                 topBar = {
-
                     AppHeader(
-                        darkTheme =
-                            darkTheme,
-
+                        darkTheme = darkTheme,
                         onToggleTheme = {
-
-                            darkTheme =
-                                !darkTheme
-
-                            prefs.darkTheme =
-                                darkTheme
+                            darkTheme = !darkTheme
+                            prefs.darkTheme = darkTheme
                         },
-
-                        onAbout = {
-                            showAbout = true
-                        }
+                        onAbout = { showAbout = true }
                     )
                 },
-
                 bottomBar = {
-
                     NavigationBar {
-
                         NavigationBarItem(
-                            selected =
-                                page == Page.SEND,
-
-                            onClick = {
-                                page = Page.SEND
-                            },
-
-                            icon = {
-                                Icon(
-                                    Icons
-                                        .Outlined
-                                        .Send,
-                                    null
-                                )
-                            },
-
-                            label = {
-                                Text("ارسال")
-                            }
+                            selected = page == Page.SEND,
+                            onClick = { page = Page.SEND },
+                            icon = { Icon(Icons.Outlined.Send, null) },
+                            label = { Text("ارسال") }
                         )
 
                         NavigationBarItem(
-                            selected =
-                                page == Page.GROUPS,
-
-                            onClick = {
-                                page =
-                                    Page.GROUPS
-                            },
-
-                            icon = {
-                                Icon(
-                                    Icons
-                                        .Outlined
-                                        .Groups,
-                                    null
-                                )
-                            },
-
-                            label = {
-                                Text("گروه‌ها")
-                            }
+                            selected = page == Page.GROUPS,
+                            onClick = { page = Page.GROUPS },
+                            icon = { Icon(Icons.Outlined.Groups, null) },
+                            label = { Text("گروه‌ها") }
                         )
 
                         NavigationBarItem(
-                            selected =
-                                page ==
-                                    Page.SETTINGS,
-
-                            onClick = {
-                                page =
-                                    Page.SETTINGS
-                            },
-
-                            icon = {
-                                Icon(
-                                    Icons
-                                        .Outlined
-                                        .Settings,
-                                    null
-                                )
-                            },
-
-                            label = {
-                                Text("تنظیمات")
-                            }
+                            selected = page == Page.SETTINGS,
+                            onClick = { page = Page.SETTINGS },
+                            icon = { Icon(Icons.Outlined.Settings, null) },
+                            label = { Text("تنظیمات") }
                         )
                     }
                 }
-
             ) { padding ->
-
                 Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(
-                                MaterialTheme
-                                    .colorScheme
-                                    .background
-                            )
-                            .padding(padding)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(padding)
                 ) {
-
                     when (page) {
-
                         Page.SEND -> {
-
                             SendScreen(
-                                groups =
-                                    groups,
-
-                                selectedSimId =
-                                    selectedSimId,
-
-                                confirmBeforeSend =
-                                    confirmBeforeSend,
-
-                                requestSmsPermission =
-                                    requestSmsPermission,
-
-                                onOpenGroups = {
-                                    page =
-                                        Page.GROUPS
-                                }
+                                groups = groups,
+                                selectedSimId = selectedSimId,
+                                confirmBeforeSend = confirmBeforeSend,
+                                requestSmsPermission = requestSmsPermission,
+                                onOpenGroups = { page = Page.GROUPS }
                             )
                         }
 
                         Page.GROUPS -> {
-
                             GroupsScreen(
-                                groups =
-                                    groups,
-
+                                groups = groups,
                                 onSaveGroup = { group ->
-
-                                    val index =
-                                        groups
-                                            .indexOfFirst {
-                                                it.id ==
-                                                    group.id
-                                            }
+                                    val index = groups.indexOfFirst { it.id == group.id }
 
                                     if (index >= 0) {
-                                        groups[index] =
-                                            group
+                                        groups[index] = group
                                     } else {
-                                        groups.add(
-                                            group
-                                        )
+                                        groups.add(group)
                                     }
 
-                                    prefs.saveGroups(
-                                        groups
-                                    )
+                                    prefs.saveGroups(groups)
                                 },
-
                                 onDeleteGroup = { group ->
-
-                                    groups.removeAll {
-                                        it.id ==
-                                            group.id
-                                    }
-
-                                    prefs.saveGroups(
-                                        groups
-                                    )
+                                    groups.removeAll { it.id == group.id }
+                                    prefs.saveGroups(groups)
                                 }
                             )
                         }
 
                         Page.SETTINGS -> {
-
                             SettingsScreen(
-                                selectedSimId =
-                                    selectedSimId,
-
+                                selectedSimId = selectedSimId,
                                 onSelectedSimChanged = {
-
-                                    selectedSimId =
-                                        it
-
-                                    prefs.selectedSimId =
-                                        it
+                                    selectedSimId = it
+                                    prefs.selectedSimId = it
                                 },
-
-                                confirmBeforeSend =
-                                    confirmBeforeSend,
-
+                                confirmBeforeSend = confirmBeforeSend,
                                 onConfirmChanged = {
-
-                                    confirmBeforeSend =
-                                        it
-
-                                    prefs.confirmBeforeSend =
-                                        it
+                                    confirmBeforeSend = it
+                                    prefs.confirmBeforeSend = it
                                 }
                             )
                         }
@@ -653,43 +368,17 @@ private fun SmsLongApp(
             }
 
             if (showAbout) {
-
                 AlertDialog(
-                    onDismissRequest = {
-                        showAbout = false
-                    },
-
-                    icon = {
-
-                        Icon(
-                            Icons
-                                .Outlined
-                                .Info,
-                            null
-                        )
-                    },
-
-                    title = {
-                        Text(
-                            "پیامک طولانی"
-                        )
-                    },
-
+                    onDismissRequest = { showAbout = false },
+                    icon = { Icon(Icons.Outlined.Info, null) },
+                    title = { Text("پیامک طولانی") },
                     text = {
-
                         Text(
                             "برنامه ارسال پیامک طولانی با قابلیت انتخاب مخاطب، ساخت گروه، ارسال گروهی، انتخاب سیم‌کارت و تم روشن و تاریک.\n\nنسخه 2.0"
                         )
                     },
-
                     confirmButton = {
-
-                        TextButton(
-                            onClick = {
-                                showAbout =
-                                    false
-                            }
-                        ) {
+                        TextButton(onClick = { showAbout = false }) {
                             Text("باشه")
                         }
                     }
@@ -705,94 +394,53 @@ private fun AppHeader(
     onToggleTheme: () -> Unit,
     onAbout: () -> Unit
 ) {
-
     CompositionLocalProvider(
-        LocalLayoutDirection provides
-            LayoutDirection.Ltr
+        LocalLayoutDirection provides LayoutDirection.Ltr
     ) {
-
         Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding(),
             shadowElevation = 2.dp,
-            color =
-                MaterialTheme
-                    .colorScheme
-                    .surface
+            color = MaterialTheme.colorScheme.surface
         ) {
-
             Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(58.dp)
-                        .padding(
-                            horizontal =
-                                10.dp
-                        )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp)
+                    .padding(horizontal = 10.dp)
             ) {
-
                 Row(
-                    modifier =
-                        Modifier.align(
-                            Alignment.CenterStart
-                        )
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-
-                    IconButton(
-                        onClick =
-                            onToggleTheme
-                    ) {
-
+                    IconButton(onClick = onToggleTheme) {
                         Icon(
-                            imageVector =
-                                if (darkTheme)
-                                    Icons
-                                        .Outlined
-                                        .LightMode
-                                else
-                                    Icons
-                                        .Outlined
-                                        .DarkMode,
-
-                            contentDescription =
-                                "تغییر تم"
+                            imageVector = if (darkTheme)
+                                Icons.Outlined.LightMode
+                            else
+                                Icons.Outlined.DarkMode,
+                            contentDescription = "تغییر تم"
                         )
                     }
 
-                    IconButton(
-                        onClick =
-                            onAbout
-                    ) {
-
+                    IconButton(onClick = onAbout) {
                         Icon(
-                            Icons
-                                .Outlined
-                                .Info,
-                            "توضیحات"
+                            Icons.Outlined.Info,
+                            contentDescription = "توضیحات"
                         )
                     }
                 }
 
                 Text(
-                    text =
-                        "پیامک طولانی",
-
-                    modifier =
-                        Modifier
-                            .align(
-                                Alignment.CenterEnd
-                            )
-                            .padding(
-                                end = 6.dp
-                            ),
-
-                    textAlign =
-                        TextAlign.End,
-
-                    fontWeight =
-                        FontWeight.Bold,
-
-                    fontSize =
-                        20.sp
+                    text = "پیامک طولانی",
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 8.dp),
+                    textAlign = TextAlign.End,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 19.sp,
+                    maxLines = 1
                 )
             }
         }
@@ -804,206 +452,100 @@ private fun SendScreen(
     groups: List<ContactGroup>,
     selectedSimId: Int,
     confirmBeforeSend: Boolean,
-    requestSmsPermission:
-        ((() -> Unit)) -> Unit,
+    requestSmsPermission: ((() -> Unit)) -> Unit,
     onOpenGroups: () -> Unit
 ) {
+    val context = LocalContext.current
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-    val context =
-        LocalContext.current
+    var recipientMode by rememberSaveable { mutableStateOf(RecipientMode.PERSON) }
+    var phone by rememberSaveable { mutableStateOf("") }
+    var message by rememberSaveable { mutableStateOf("") }
+    var selectedGroupId by rememberSaveable { mutableStateOf("") }
+    var showGroupPicker by remember { mutableStateOf(false) }
+    var showConfirm by remember { mutableStateOf(false) }
 
-    val snackbar =
-        remember {
-            SnackbarHostState()
-        }
-
-    val scope =
-        rememberCoroutineScope()
-
-    var recipientMode by rememberSaveable {
-        mutableStateOf(
-            RecipientMode.PERSON
-        )
-    }
-
-    var phone by rememberSaveable {
-        mutableStateOf("")
-    }
-
-    var message by rememberSaveable {
-        mutableStateOf("")
-    }
-
-    var selectedGroupId by rememberSaveable {
-        mutableStateOf("")
-    }
-
-    var showGroupPicker by remember {
-        mutableStateOf(false)
-    }
-
-    var showConfirm by remember {
-        mutableStateOf(false)
-    }
-
-    val selectedGroup =
-        groups.firstOrNull {
-            it.id ==
-                selectedGroupId
-        }
+    val selectedGroup = groups.firstOrNull { it.id == selectedGroupId }
 
     val contactPicker =
         rememberLauncherForActivityResult(
-            ActivityResultContracts
-                .StartActivityForResult()
+            ActivityResultContracts.StartActivityForResult()
         ) { result ->
-
-            if (
-                result.resultCode ==
-                Activity.RESULT_OK
-            ) {
-
-                result.data
-                    ?.data
-                    ?.let { uri ->
-
-                        context
-                            .contentResolver
-                            .query(
-                                uri,
-
-                                arrayOf(
-                                    ContactsContract
-                                        .CommonDataKinds
-                                        .Phone
-                                        .NUMBER
-                                ),
-
-                                null,
-                                null,
-                                null
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    context.contentResolver.query(
+                        uri,
+                        arrayOf(
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                        ),
+                        null,
+                        null,
+                        null
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val index = cursor.getColumnIndex(
+                                ContactsContract.CommonDataKinds.Phone.NUMBER
                             )
-                            ?.use { cursor ->
 
-                                if (
-                                    cursor
-                                        .moveToFirst()
-                                ) {
-
-                                    val index =
-                                        cursor
-                                            .getColumnIndex(
-                                                ContactsContract
-                                                    .CommonDataKinds
-                                                    .Phone
-                                                    .NUMBER
-                                            )
-
-                                    if (index >= 0) {
-
-                                        phone =
-                                            cursor
-                                                .getString(
-                                                    index
-                                                )
-                                                .orEmpty()
-                                    }
-                                }
+                            if (index >= 0) {
+                                phone = cursor.getString(index).orEmpty()
                             }
+                        }
                     }
+                }
             }
         }
 
-    fun targetNumbers():
-        List<String> {
-
-        return when (
-            recipientMode
-        ) {
-
+    fun targetNumbers(): List<String> {
+        return when (recipientMode) {
             RecipientMode.PERSON -> {
-
-                listOf(
-                    phone
-                ).filter {
-                    normalizePhone(it)
-                        .isNotBlank()
-                }
+                listOf(phone).filter { normalizePhone(it).isNotBlank() }
             }
 
             RecipientMode.GROUP -> {
-
-                selectedGroup
-                    ?.members
-                    ?.map {
-                        it.phone
-                    }
-                    ?.distinctBy {
-                        normalizePhone(it)
-                    }
+                selectedGroup?.members
+                    ?.map { it.phone }
+                    ?.distinctBy { normalizePhone(it) }
                     .orEmpty()
             }
         }
     }
 
     fun sendNow() {
-
-        val targets =
-            targetNumbers()
+        val targets = targetNumbers()
 
         if (targets.isEmpty()) {
-
             scope.launch {
-
                 snackbar.showSnackbar(
-                    if (
-                        recipientMode ==
-                        RecipientMode.GROUP
-                    )
+                    if (recipientMode == RecipientMode.GROUP)
                         "یک گروه را انتخاب کنید."
                     else
                         "شماره گیرنده را وارد کنید."
                 )
             }
-
             return
         }
 
         if (message.isBlank()) {
-
             scope.launch {
-
-                snackbar.showSnackbar(
-                    "متن پیام را وارد کنید."
-                )
+                snackbar.showSnackbar("متن پیام را وارد کنید.")
             }
-
             return
         }
 
         requestSmsPermission {
-
             try {
-
                 targets.forEach { number ->
-
                     LongSmsSender.send(
-                        context =
-                            context,
-
-                        subscriptionId =
-                            selectedSimId,
-
-                        phone =
-                            number,
-
-                        message =
-                            message
+                        context = context,
+                        subscriptionId = selectedSimId,
+                        phone = number,
+                        message = message
                     )
                 }
 
                 scope.launch {
-
                     snackbar.showSnackbar(
                         if (targets.size == 1)
                             "پیام با موفقیت ارسال شد."
@@ -1011,281 +553,126 @@ private fun SendScreen(
                             "پیام برای ${targets.size} مخاطب ارسال شد."
                     )
                 }
-
             } catch (e: Exception) {
-
                 scope.launch {
-
                     snackbar.showSnackbar(
-                        e.message
-                            ?: "ارسال پیام ناموفق بود."
+                        e.message ?: "ارسال پیام ناموفق بود."
                     )
                 }
             }
         }
     }
 
-    Box(
-        modifier =
-            Modifier.fillMaxSize()
-    ) {
-
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(
-                        horizontal =
-                            16.dp
-                    ),
-
-            verticalArrangement =
-                Arrangement.spacedBy(
-                    14.dp
-                )
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
             item {
-
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                top = 8.dp
-                            ),
-
-                    horizontalArrangement =
-                        Arrangement.spacedBy(
-                            10.dp
-                        )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-
                     FilterChip(
-                        selected =
-                            recipientMode ==
-                                RecipientMode.PERSON,
-
-                        onClick = {
-                            recipientMode =
-                                RecipientMode.PERSON
-                        },
-
-                        label = {
-                            Text("مخاطب")
-                        },
-
-                        leadingIcon = {
-
-                            Icon(
-                                Icons
-                                    .Outlined
-                                    .Person,
-                                null
-                            )
-                        }
+                        selected = recipientMode == RecipientMode.PERSON,
+                        onClick = { recipientMode = RecipientMode.PERSON },
+                        label = { Text("مخاطب") },
+                        leadingIcon = { Icon(Icons.Outlined.Person, null) }
                     )
 
                     FilterChip(
-                        selected =
-                            recipientMode ==
-                                RecipientMode.GROUP,
-
-                        onClick = {
-                            recipientMode =
-                                RecipientMode.GROUP
-                        },
-
-                        label = {
-                            Text("گروه")
-                        },
-
-                        leadingIcon = {
-
-                            Icon(
-                                Icons
-                                    .Outlined
-                                    .Groups,
-                                null
-                            )
-                        }
+                        selected = recipientMode == RecipientMode.GROUP,
+                        onClick = { recipientMode = RecipientMode.GROUP },
+                        label = { Text("گروه") },
+                        leadingIcon = { Icon(Icons.Outlined.Groups, null) }
                     )
                 }
             }
 
-            if (
-                recipientMode ==
-                RecipientMode.PERSON
-            ) {
-
+            if (recipientMode == RecipientMode.PERSON) {
                 item {
-
                     ElevatedCard(
-                        modifier =
-                            Modifier.fillMaxWidth(),
-
-                        shape =
-                            RoundedCornerShape(
-                                18.dp
-                            )
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
-
                         OutlinedTextField(
-                            value =
-                                phone,
-
-                            onValueChange = {
-                                phone = it
-                            },
-
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        12.dp
-                                    ),
-
-                            label = {
-                                Text(
-                                    "شماره گیرنده"
-                                )
-                            },
-
-                            placeholder = {
-                                Text(
-                                    "09123456789"
-                                )
-                            },
-
-                            singleLine =
-                                true,
-
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    keyboardType =
-                                        KeyboardType.Phone
-                                ),
-
+                            value = phone,
+                            onValueChange = { phone = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            label = { Text("شماره گیرنده") },
+                            placeholder = { Text("09123456789") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Phone
+                            ),
                             leadingIcon = {
-
-                                Icon(
-                                    Icons
-                                        .Outlined
-                                        .Person,
-                                    null
-                                )
+                                Icon(Icons.Outlined.Person, null)
                             },
-
                             trailingIcon = {
-
                                 IconButton(
                                     onClick = {
-
                                         contactPicker.launch(
                                             Intent(
                                                 Intent.ACTION_PICK,
-
-                                                ContactsContract
-                                                    .CommonDataKinds
-                                                    .Phone
-                                                    .CONTENT_URI
+                                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI
                                             )
                                         )
                                     }
                                 ) {
-
                                     Icon(
-                                        Icons
-                                            .Outlined
-                                            .Contacts,
+                                        Icons.Outlined.Contacts,
                                         "انتخاب مخاطب"
                                     )
                                 }
                             },
-
-                            shape =
-                                RoundedCornerShape(
-                                    14.dp
-                                )
+                            shape = RoundedCornerShape(14.dp)
                         )
                     }
                 }
-
             } else {
-
                 item {
-
                     ElevatedCard(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-
-                                    if (
-                                        groups.isEmpty()
-                                    ) {
-                                        onOpenGroups()
-                                    } else {
-                                        showGroupPicker =
-                                            true
-                                    }
-                                },
-
-                        shape =
-                            RoundedCornerShape(
-                                18.dp
-                            )
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (groups.isEmpty()) {
+                                    onOpenGroups()
+                                } else {
+                                    showGroupPicker = true
+                                }
+                            },
+                        shape = RoundedCornerShape(18.dp)
                     ) {
-
                         Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        18.dp
-                                    ),
-
-                            verticalAlignment =
-                                Alignment.CenterVertically
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-
                             Icon(
-                                Icons
-                                    .Outlined
-                                    .Groups,
+                                Icons.Outlined.Groups,
                                 null,
-
-                                tint =
-                                    MaterialTheme
-                                        .colorScheme
-                                        .primary
+                                tint = MaterialTheme.colorScheme.primary
                             )
 
-                            Spacer(
-                                Modifier.width(
-                                    12.dp
-                                )
-                            )
+                            Spacer(Modifier.width(12.dp))
 
                             Column(
-                                modifier =
-                                    Modifier.weight(
-                                        1f
-                                    )
+                                modifier = Modifier.weight(1f)
                             ) {
-
                                 Text(
-                                    selectedGroup
-                                        ?.name
-                                        ?: "انتخاب گروه",
-
-                                    fontWeight =
-                                        FontWeight.Bold
+                                    selectedGroup?.name ?: "انتخاب گروه",
+                                    fontWeight = FontWeight.Bold
                                 )
 
                                 Text(
                                     when {
-
                                         groups.isEmpty() ->
                                             "ابتدا یک گروه بسازید"
 
@@ -1295,16 +682,12 @@ private fun SendScreen(
                                         else ->
                                             "برای انتخاب لمس کنید"
                                     },
-
-                                    fontSize =
-                                        12.sp
+                                    fontSize = 12.sp
                                 )
                             }
 
                             Icon(
-                                Icons
-                                    .Outlined
-                                    .KeyboardArrowDown,
+                                Icons.Outlined.KeyboardArrowDown,
                                 null
                             )
                         }
@@ -1313,127 +696,70 @@ private fun SendScreen(
             }
 
             item {
-
                 ElevatedCard(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    shape =
-                        RoundedCornerShape(
-                            18.dp
-                        )
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp)
                 ) {
-
                     Column(
-                        modifier =
-                            Modifier.padding(
-                                14.dp
-                            )
+                        modifier = Modifier.padding(14.dp)
                     ) {
-
                         Text(
                             "متن پیام",
-                            fontWeight =
-                                FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
 
-                        Spacer(
-                            Modifier.height(
-                                8.dp
-                            )
-                        )
+                        Spacer(Modifier.height(8.dp))
 
                         OutlinedTextField(
-                            value =
-                                message,
-
-                            onValueChange = {
-                                message = it
-                            },
-
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(
-                                        min = 270.dp
-                                    ),
-
+                            value = message,
+                            onValueChange = { message = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 270.dp),
                             placeholder = {
-
-                                Text(
-                                    "متن طولانی خود را اینجا بنویسید..."
-                                )
+                                Text("متن طولانی خود را اینجا بنویسید...")
                             },
-
-                            minLines =
-                                10,
-
-                            maxLines =
-                                20,
-
-                            shape =
-                                RoundedCornerShape(
-                                    14.dp
-                                )
+                            minLines = 10,
+                            maxLines = 20,
+                            shape = RoundedCornerShape(14.dp)
                         )
 
-                        Spacer(
-                            Modifier.height(
-                                8.dp
-                            )
-                        )
+                        Spacer(Modifier.height(8.dp))
 
                         Text(
                             "${message.length} کاراکتر",
-
-                            modifier =
-                                Modifier.fillMaxWidth(),
-
-                            textAlign =
-                                TextAlign.End,
-
-                            fontSize =
-                                13.sp
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End,
+                            fontSize = 13.sp
                         )
                     }
                 }
             }
 
             item {
-
                 Button(
                     onClick = {
-
-                        val targets =
-                            targetNumbers()
+                        val targets = targetNumbers()
 
                         when {
-
                             targets.isEmpty() -> {
-
                                 scope.launch {
-
-                                    snackbar
-                                        .showSnackbar(
-                                            "گیرنده را انتخاب کنید."
-                                        )
+                                    snackbar.showSnackbar(
+                                        "گیرنده را انتخاب کنید."
+                                    )
                                 }
                             }
 
                             message.isBlank() -> {
-
                                 scope.launch {
-
-                                    snackbar
-                                        .showSnackbar(
-                                            "متن پیام را وارد کنید."
-                                        )
+                                    snackbar.showSnackbar(
+                                        "متن پیام را وارد کنید."
+                                    )
                                 }
                             }
 
                             confirmBeforeSend -> {
-                                showConfirm =
-                                    true
+                                showConfirm = true
                             }
 
                             else -> {
@@ -1441,241 +767,111 @@ private fun SendScreen(
                             }
                         }
                     },
-
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(
-                                58.dp
-                            ),
-
-                    shape =
-                        RoundedCornerShape(
-                            17.dp
-                        ),
-
-                    colors =
-                        ButtonDefaults
-                            .buttonColors(
-                                containerColor =
-                                    AppPurple
-                            )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    shape = RoundedCornerShape(17.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppPurple
+                    )
                 ) {
-
-                    Icon(
-                        Icons
-                            .Outlined
-                            .Send,
-                        null
-                    )
-
-                    Spacer(
-                        Modifier.width(
-                            8.dp
-                        )
-                    )
-
+                    Icon(Icons.Outlined.Send, null)
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         "ارسال پیام",
-                        fontSize =
-                            17.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
             item {
-
-                Spacer(
-                    Modifier.height(
-                        10.dp
-                    )
-                )
+                Spacer(Modifier.height(10.dp))
             }
         }
 
         SnackbarHost(
-            hostState =
-                snackbar,
-
-            modifier =
-                Modifier.align(
-                    Alignment.BottomCenter
-                )
+            hostState = snackbar,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 
     if (showGroupPicker) {
-
         AlertDialog(
-            onDismissRequest = {
-                showGroupPicker =
-                    false
-            },
-
-            title = {
-                Text(
-                    "انتخاب گروه"
-                )
-            },
-
+            onDismissRequest = { showGroupPicker = false },
+            title = { Text("انتخاب گروه") },
             text = {
-
                 LazyColumn(
-                    modifier =
-                        Modifier.heightIn(
-                            max = 400.dp
-                        )
+                    modifier = Modifier.heightIn(max = 400.dp)
                 ) {
-
                     items(
                         groups,
-                        key = {
-                            it.id
-                        }
+                        key = { it.id }
                     ) { group ->
-
                         ListItem(
-                            headlineContent = {
-                                Text(
-                                    group.name
-                                )
-                            },
-
+                            headlineContent = { Text(group.name) },
                             supportingContent = {
-
-                                Text(
-                                    "${group.members.size} مخاطب"
-                                )
+                                Text("${group.members.size} مخاطب")
                             },
-
                             leadingContent = {
-
                                 RadioButton(
-                                    selected =
-                                        selectedGroupId ==
-                                            group.id,
-
+                                    selected = selectedGroupId == group.id,
                                     onClick = {
-
-                                        selectedGroupId =
-                                            group.id
-
-                                        showGroupPicker =
-                                            false
+                                        selectedGroupId = group.id
+                                        showGroupPicker = false
                                     }
                                 )
                             },
-
-                            modifier =
-                                Modifier.clickable {
-
-                                    selectedGroupId =
-                                        group.id
-
-                                    showGroupPicker =
-                                        false
-                                }
+                            modifier = Modifier.clickable {
+                                selectedGroupId = group.id
+                                showGroupPicker = false
+                            }
                         )
                     }
                 }
             },
-
             confirmButton = {}
         )
     }
 
     if (showConfirm) {
-
-        val targetCount =
-            targetNumbers().size
+        val targetCount = targetNumbers().size
 
         AlertDialog(
-            onDismissRequest = {
-                showConfirm =
-                    false
-            },
-
-            icon = {
-
-                Icon(
-                    Icons
-                        .Outlined
-                        .Send,
-                    null
-                )
-            },
-
-            title = {
-                Text(
-                    "ارسال پیام؟"
-                )
-            },
-
+            onDismissRequest = { showConfirm = false },
+            icon = { Icon(Icons.Outlined.Send, null) },
+            title = { Text("ارسال پیام؟") },
             text = {
-
                 Column {
-
                     Text(
-                        if (
-                            recipientMode ==
-                            RecipientMode.GROUP
-                        )
+                        if (recipientMode == RecipientMode.GROUP)
                             "گروه: ${selectedGroup?.name.orEmpty()}"
                         else
                             "گیرنده: $phone"
                     )
 
                     if (targetCount > 1) {
-
-                        Spacer(
-                            Modifier.height(
-                                6.dp
-                            )
-                        )
-
-                        Text(
-                            "$targetCount مخاطب"
-                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text("$targetCount مخاطب")
                     }
 
-                    Spacer(
-                        Modifier.height(
-                            12.dp
-                        )
-                    )
-
-                    Text(
-                        message,
-                        maxLines = 8
-                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(message, maxLines = 8)
                 }
             },
-
             confirmButton = {
-
                 Button(
                     onClick = {
-
-                        showConfirm =
-                            false
-
+                        showConfirm = false
                         sendNow()
                     }
                 ) {
                     Text("ارسال")
                 }
             },
-
             dismissButton = {
-
                 TextButton(
-                    onClick = {
-                        showConfirm =
-                            false
-                    }
+                    onClick = { showConfirm = false }
                 ) {
                     Text("انصراف")
                 }
@@ -1687,102 +883,60 @@ private fun SendScreen(
 @Composable
 private fun GroupsScreen(
     groups: List<ContactGroup>,
-    onSaveGroup:
-        (ContactGroup) -> Unit,
-    onDeleteGroup:
-        (ContactGroup) -> Unit
+    onSaveGroup: (ContactGroup) -> Unit,
+    onDeleteGroup: (ContactGroup) -> Unit
 ) {
-
-    val context =
-        LocalContext.current
-
-    val scope =
-        rememberCoroutineScope()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var contacts by remember {
-        mutableStateOf(
-            emptyList<GroupMember>()
-        )
+        mutableStateOf(emptyList<GroupMember>())
     }
 
     var editingGroup by remember {
-        mutableStateOf<ContactGroup?>(
-            null
-        )
+        mutableStateOf<ContactGroup?>(null)
     }
 
     var deleteGroup by remember {
-        mutableStateOf<ContactGroup?>(
-            null
-        )
+        mutableStateOf<ContactGroup?>(null)
     }
 
     var pendingEdit by remember {
-        mutableStateOf<ContactGroup?>(
-            null
-        )
+        mutableStateOf<ContactGroup?>(null)
     }
 
     var pendingCreate by remember {
         mutableStateOf(false)
     }
 
-    fun loadContactsAndEdit(
-        group: ContactGroup
-    ) {
-
+    fun loadContactsAndEdit(group: ContactGroup) {
         scope.launch {
-
-            contacts =
-                withContext(
-                    Dispatchers.IO
-                ) {
-
-                    ContactRepository
-                        .load(context)
-                }
-
-            editingGroup =
-                group
+            contacts = withContext(Dispatchers.IO) {
+                ContactRepository.load(context)
+            }
+            editingGroup = group
         }
     }
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
-            ActivityResultContracts
-                .RequestPermission()
+            ActivityResultContracts.RequestPermission()
         ) { granted ->
-
             if (granted) {
-
-                val target =
-                    if (pendingCreate) {
-
-                        ContactGroup(
-                            id =
-                                UUID
-                                    .randomUUID()
-                                    .toString(),
-
-                            name = "",
-
-                            members =
-                                emptyList()
-                        )
-
-                    } else {
-                        pendingEdit
-                    }
-
-                if (target != null) {
-
-                    loadContactsAndEdit(
-                        target
+                val target = if (pendingCreate) {
+                    ContactGroup(
+                        id = UUID.randomUUID().toString(),
+                        name = "",
+                        members = emptyList()
                     )
+                } else {
+                    pendingEdit
                 }
 
+                if (target != null) {
+                    loadContactsAndEdit(target)
+                }
             } else {
-
                 Toast.makeText(
                     context,
                     "برای ساخت گروه باید مجوز مخاطبین فعال باشد.",
@@ -1790,49 +944,27 @@ private fun GroupsScreen(
                 ).show()
             }
 
-            pendingCreate =
-                false
-
-            pendingEdit =
-                null
+            pendingCreate = false
+            pendingEdit = null
         }
 
-    fun openEditor(
-        group: ContactGroup?
-    ) {
-
+    fun openEditor(group: ContactGroup?) {
         if (
-            ContextCompat
-                .checkSelfPermission(
-                    context,
-                    Manifest.permission.READ_CONTACTS
-                ) ==
-            PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED
         ) {
-
             loadContactsAndEdit(
-                group
-                    ?: ContactGroup(
-                        id =
-                            UUID
-                                .randomUUID()
-                                .toString(),
-
-                        name = "",
-
-                        members =
-                            emptyList()
-                    )
+                group ?: ContactGroup(
+                    id = UUID.randomUUID().toString(),
+                    name = "",
+                    members = emptyList()
+                )
             )
-
         } else {
-
-            pendingCreate =
-                group == null
-
-            pendingEdit =
-                group
-
+            pendingCreate = group == null
+            pendingEdit = group
             permissionLauncher.launch(
                 Manifest.permission.READ_CONTACTS
             )
@@ -1840,238 +972,107 @@ private fun GroupsScreen(
     }
 
     LazyColumn(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal =
-                        16.dp
-                ),
-
-        verticalArrangement =
-            Arrangement.spacedBy(
-                12.dp
-            )
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
         item {
-
             Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            top = 10.dp
-                        ),
-
-                horizontalArrangement =
-                    Arrangement.SpaceBetween,
-
-                verticalAlignment =
-                    Alignment.CenterVertically
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Text(
                     "گروه‌ها",
-                    fontSize =
-                        22.sp,
-
-                    fontWeight =
-                        FontWeight.Bold
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
                 )
 
-                Button(
-                    onClick = {
-                        openEditor(null)
-                    }
-                ) {
-
-                    Icon(
-                        Icons
-                            .Outlined
-                            .GroupAdd,
-                        null
-                    )
-
-                    Spacer(
-                        Modifier.width(
-                            6.dp
-                        )
-                    )
-
-                    Text(
-                        "گروه جدید"
-                    )
+                Button(onClick = { openEditor(null) }) {
+                    Icon(Icons.Outlined.GroupAdd, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("گروه جدید")
                 }
             }
         }
 
         if (groups.isEmpty()) {
-
             item {
-
                 Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                vertical =
-                                    70.dp
-                            ),
-
-                    horizontalAlignment =
-                        Alignment.CenterHorizontally
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 70.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     Icon(
-                        Icons
-                            .Outlined
-                            .Groups,
+                        Icons.Outlined.Groups,
                         null,
-
-                        modifier =
-                            Modifier.size(
-                                72.dp
-                            ),
-
-                        tint =
-                            MaterialTheme
-                                .colorScheme
-                                .primary
+                        modifier = Modifier.size(72.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
 
-                    Spacer(
-                        Modifier.height(
-                            14.dp
-                        )
-                    )
-
-                    Text(
-                        "هنوز گروهی ساخته نشده است."
-                    )
-
-                    Spacer(
-                        Modifier.height(
-                            14.dp
-                        )
-                    )
+                    Spacer(Modifier.height(14.dp))
+                    Text("هنوز گروهی ساخته نشده است.")
+                    Spacer(Modifier.height(14.dp))
 
                     OutlinedButton(
-                        onClick = {
-                            openEditor(null)
-                        }
+                        onClick = { openEditor(null) }
                     ) {
-
-                        Text(
-                            "ساخت اولین گروه"
-                        )
+                        Text("ساخت اولین گروه")
                     }
                 }
             }
-
         } else {
-
             items(
                 groups,
-                key = {
-                    it.id
-                }
+                key = { it.id }
             ) { group ->
-
                 ElevatedCard(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    shape =
-                        RoundedCornerShape(
-                            18.dp
-                        )
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp)
                 ) {
-
                     Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    16.dp
-                                ),
-
-                        verticalAlignment =
-                            Alignment.CenterVertically
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         Icon(
-                            Icons
-                                .Outlined
-                                .Groups,
+                            Icons.Outlined.Groups,
                             null,
-
-                            tint =
-                                MaterialTheme
-                                    .colorScheme
-                                    .primary
+                            tint = MaterialTheme.colorScheme.primary
                         )
 
-                        Spacer(
-                            Modifier.width(
-                                12.dp
-                            )
-                        )
+                        Spacer(Modifier.width(12.dp))
 
                         Column(
-                            modifier =
-                                Modifier.weight(
-                                    1f
-                                )
+                            modifier = Modifier.weight(1f)
                         ) {
-
                             Text(
                                 group.name,
-
-                                fontWeight =
-                                    FontWeight.Bold,
-
-                                fontSize =
-                                    17.sp
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp
                             )
 
                             Text(
                                 "${group.members.size} مخاطب",
-
-                                fontSize =
-                                    12.sp
+                                fontSize = 12.sp
                             )
                         }
 
                         IconButton(
-                            onClick = {
-                                openEditor(
-                                    group
-                                )
-                            }
+                            onClick = { openEditor(group) }
                         ) {
-
-                            Icon(
-                                Icons
-                                    .Outlined
-                                    .Edit,
-                                "ویرایش"
-                            )
+                            Icon(Icons.Outlined.Edit, "ویرایش")
                         }
 
                         IconButton(
-                            onClick = {
-                                deleteGroup =
-                                    group
-                            }
+                            onClick = { deleteGroup = group }
                         ) {
-
-                            Icon(
-                                Icons
-                                    .Outlined
-                                    .Delete,
-                                "حذف"
-                            )
+                            Icon(Icons.Outlined.Delete, "حذف")
                         }
                     }
                 }
@@ -2079,83 +1080,39 @@ private fun GroupsScreen(
         }
 
         item {
-            Spacer(
-                Modifier.height(
-                    10.dp
-                )
-            )
+            Spacer(Modifier.height(10.dp))
         }
     }
 
     editingGroup?.let { group ->
-
         GroupEditorDialog(
-            group =
-                group,
-
-            contacts =
-                contacts,
-
-            onDismiss = {
-                editingGroup =
-                    null
-            },
-
+            group = group,
+            contacts = contacts,
+            onDismiss = { editingGroup = null },
             onSave = {
-
                 onSaveGroup(it)
-
-                editingGroup =
-                    null
+                editingGroup = null
             }
         )
     }
 
     deleteGroup?.let { group ->
-
         AlertDialog(
-            onDismissRequest = {
-                deleteGroup =
-                    null
-            },
-
-            title = {
-                Text(
-                    "حذف گروه"
-                )
-            },
-
-            text = {
-                Text(
-                    "گروه «${group.name}» حذف شود؟"
-                )
-            },
-
+            onDismissRequest = { deleteGroup = null },
+            title = { Text("حذف گروه") },
+            text = { Text("گروه «${group.name}» حذف شود؟") },
             confirmButton = {
-
                 Button(
                     onClick = {
-
-                        onDeleteGroup(
-                            group
-                        )
-
-                        deleteGroup =
-                            null
+                        onDeleteGroup(group)
+                        deleteGroup = null
                     }
                 ) {
                     Text("حذف")
                 }
             },
-
             dismissButton = {
-
-                TextButton(
-                    onClick = {
-                        deleteGroup =
-                            null
-                    }
-                ) {
+                TextButton(onClick = { deleteGroup = null }) {
                     Text("انصراف")
                 }
             }
@@ -2170,370 +1127,176 @@ private fun GroupEditorDialog(
     onDismiss: () -> Unit,
     onSave: (ContactGroup) -> Unit
 ) {
-
-    var name by remember(
-        group.id
-    ) {
-        mutableStateOf(
-            group.name
-        )
+    var name by remember(group.id) {
+        mutableStateOf(group.name)
     }
 
     var search by remember {
         mutableStateOf("")
     }
 
-    val selected =
-        remember(
-            group.id
-        ) {
-
-            mutableStateListOf<String>()
-                .apply {
-
-                    addAll(
-                        group.members.map {
-                            normalizePhone(
-                                it.phone
-                            )
-                        }
-                    )
+    val selected = remember(group.id) {
+        mutableStateListOf<String>().apply {
+            addAll(
+                group.members.map {
+                    normalizePhone(it.phone)
                 }
+            )
         }
+    }
 
-    val allContacts =
-        remember(
-            contacts,
-            group.members
-        ) {
+    val allContacts = remember(contacts, group.members) {
+        (contacts + group.members)
+            .distinctBy {
+                normalizePhone(it.phone)
+            }
+    }
 
-            (contacts +
-                group.members)
-                .distinctBy {
-                    normalizePhone(
-                        it.phone
-                    )
-                }
-        }
-
-    val filtered =
-        remember(
-            search,
+    val filtered = remember(search, allContacts) {
+        if (search.isBlank()) {
             allContacts
-        ) {
-
-            if (
-                search.isBlank()
-            ) {
-                allContacts
-            } else {
-
-                allContacts.filter {
-
-                    it.name.contains(
-                        search,
-                        ignoreCase =
-                            true
-                    ) ||
-                        it.phone.contains(
-                            search
-                        )
-                }
+        } else {
+            allContacts.filter {
+                it.name.contains(search, ignoreCase = true) ||
+                    it.phone.contains(search)
             }
         }
+    }
 
-    Dialog(
-        onDismissRequest =
-            onDismiss
-    ) {
-
+    Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(
-                        0.90f
-                    ),
-
-            shape =
-                RoundedCornerShape(
-                    24.dp
-                ),
-
-            color =
-                MaterialTheme
-                    .colorScheme
-                    .surface
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.90f),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface
         ) {
-
             Column(
-                modifier =
-                    Modifier.padding(
-                        16.dp
-                    )
+                modifier = Modifier.padding(16.dp)
             ) {
-
                 Text(
-                    if (
-                        group.name.isBlank()
-                    )
+                    if (group.name.isBlank())
                         "ساخت گروه"
                     else
                         "ویرایش گروه",
-
-                    fontSize =
-                        20.sp,
-
-                    fontWeight =
-                        FontWeight.Bold
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
                 )
 
-                Spacer(
-                    Modifier.height(
-                        12.dp
-                    )
-                )
+                Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value =
-                        name,
-
-                    onValueChange = {
-                        name = it
-                    },
-
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    label = {
-                        Text(
-                            "نام گروه"
-                        )
-                    },
-
-                    singleLine =
-                        true
+                    value = name,
+                    onValueChange = { name = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("نام گروه") },
+                    singleLine = true
                 )
 
-                Spacer(
-                    Modifier.height(
-                        10.dp
-                    )
-                )
+                Spacer(Modifier.height(10.dp))
 
                 OutlinedTextField(
-                    value =
-                        search,
-
-                    onValueChange = {
-                        search = it
-                    },
-
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    placeholder = {
-                        Text(
-                            "جستجوی مخاطب"
-                        )
-                    },
-
+                    value = search,
+                    onValueChange = { search = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("جستجوی مخاطب") },
                     leadingIcon = {
-
-                        Icon(
-                            Icons
-                                .Outlined
-                                .Search,
-                            null
-                        )
+                        Icon(Icons.Outlined.Search, null)
                     },
-
-                    singleLine =
-                        true
+                    singleLine = true
                 )
 
-                Spacer(
-                    Modifier.height(
-                        8.dp
-                    )
-                )
+                Spacer(Modifier.height(8.dp))
 
                 Text(
                     "${selected.size} مخاطب انتخاب شده",
-
-                    color =
-                        MaterialTheme
-                            .colorScheme
-                            .primary,
-
-                    fontWeight =
-                        FontWeight.Bold
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
                 )
 
-                Spacer(
-                    Modifier.height(
-                        6.dp
-                    )
-                )
+                Spacer(Modifier.height(6.dp))
 
                 LazyColumn(
-                    modifier =
-                        Modifier.weight(
-                            1f
-                        )
+                    modifier = Modifier.weight(1f)
                 ) {
-
                     items(
                         filtered,
                         key = {
-                            normalizePhone(
-                                it.phone
-                            )
+                            normalizePhone(it.phone)
                         }
                     ) { contact ->
-
-                        val key =
-                            normalizePhone(
-                                contact.phone
-                            )
-
-                        val checked =
-                            selected.contains(
-                                key
-                            )
+                        val key = normalizePhone(contact.phone)
+                        val checked = selected.contains(key)
 
                         ListItem(
                             headlineContent = {
-
                                 Text(
-                                    contact.name
-                                        .ifBlank {
-                                            contact.phone
-                                        }
+                                    contact.name.ifBlank {
+                                        contact.phone
+                                    }
                                 )
                             },
-
                             supportingContent = {
-
-                                Text(
-                                    contact.phone
-                                )
+                                Text(contact.phone)
                             },
-
                             leadingContent = {
-
                                 Checkbox(
-                                    checked =
-                                        checked,
-
+                                    checked = checked,
                                     onCheckedChange = { value ->
-
                                         if (value) {
-
-                                            if (
-                                                !selected
-                                                    .contains(
-                                                        key
-                                                    )
-                                            ) {
-                                                selected.add(
-                                                    key
-                                                )
+                                            if (!selected.contains(key)) {
+                                                selected.add(key)
                                             }
-
                                         } else {
-
-                                            selected.remove(
-                                                key
-                                            )
+                                            selected.remove(key)
                                         }
                                     }
                                 )
                             },
-
-                            modifier =
-                                Modifier.clickable {
-
-                                    if (checked) {
-                                        selected.remove(
-                                            key
-                                        )
-                                    } else {
-                                        selected.add(
-                                            key
-                                        )
-                                    }
+                            modifier = Modifier.clickable {
+                                if (checked) {
+                                    selected.remove(key)
+                                } else {
+                                    selected.add(key)
                                 }
+                            }
                         )
                     }
                 }
 
-                Spacer(
-                    Modifier.height(
-                        10.dp
-                    )
-                )
+                Spacer(Modifier.height(10.dp))
 
                 Row(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    horizontalArrangement =
-                        Arrangement.spacedBy(
-                            10.dp
-                        )
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-
                     OutlinedButton(
-                        onClick =
-                            onDismiss,
-
-                        modifier =
-                            Modifier.weight(
-                                1f
-                            )
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("انصراف")
                     }
 
                     Button(
-                        enabled =
-                            name.isNotBlank() &&
-                                selected.isNotEmpty(),
-
+                        enabled = name.isNotBlank() && selected.isNotEmpty(),
                         onClick = {
+                            val map = allContacts.associateBy {
+                                normalizePhone(it.phone)
+                            }
 
-                            val map =
-                                allContacts
-                                    .associateBy {
-                                        normalizePhone(
-                                            it.phone
-                                        )
-                                    }
-
-                            val members =
-                                selected
-                                    .mapNotNull {
-                                        map[it]
-                                    }
+                            val members = selected.mapNotNull {
+                                map[it]
+                            }
 
                             onSave(
                                 group.copy(
-                                    name =
-                                        name.trim(),
-
-                                    members =
-                                        members
+                                    name = name.trim(),
+                                    members = members
                                 )
                             )
                         },
-
-                        modifier =
-                            Modifier.weight(
-                                1f
-                            )
+                        modifier = Modifier.weight(1f)
                     ) {
-
                         Text("ذخیره")
                     }
                 }
@@ -2545,66 +1308,40 @@ private fun GroupEditorDialog(
 @Composable
 private fun SettingsScreen(
     selectedSimId: Int,
-    onSelectedSimChanged:
-        (Int) -> Unit,
+    onSelectedSimChanged: (Int) -> Unit,
     confirmBeforeSend: Boolean,
-    onConfirmChanged:
-        (Boolean) -> Unit
+    onConfirmChanged: (Boolean) -> Unit
 ) {
-
-    val context =
-        LocalContext.current
-
-    val scope =
-        rememberCoroutineScope()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var sims by remember {
-        mutableStateOf(
-            emptyList<SimOption>()
-        )
+        mutableStateOf(emptyList<SimOption>())
     }
 
     var showSimDialog by remember {
         mutableStateOf(false)
     }
 
-    fun loadSims(
-        openDialog: Boolean
-    ) {
-
+    fun loadSims(openDialog: Boolean) {
         scope.launch {
-
-            sims =
-                withContext(
-                    Dispatchers.IO
-                ) {
-
-                    SimRepository
-                        .load(context)
-                }
+            sims = withContext(Dispatchers.IO) {
+                SimRepository.load(context)
+            }
 
             if (openDialog) {
-                showSimDialog =
-                    true
+                showSimDialog = true
             }
         }
     }
 
     val phonePermissionLauncher =
         rememberLauncherForActivityResult(
-            ActivityResultContracts
-                .RequestPermission()
+            ActivityResultContracts.RequestPermission()
         ) { granted ->
-
             if (granted) {
-
-                loadSims(
-                    openDialog =
-                        true
-                )
-
+                loadSims(openDialog = true)
             } else {
-
                 Toast.makeText(
                     context,
                     "برای نمایش سیم‌کارت‌ها باید مجوز تلفن فعال باشد.",
@@ -2614,40 +1351,25 @@ private fun SettingsScreen(
         }
 
     LaunchedEffect(Unit) {
-
         if (
-            ContextCompat
-                .checkSelfPermission(
-                    context,
-                    Manifest.permission.READ_PHONE_STATE
-                ) ==
-            PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_PHONE_STATE
+            ) == PackageManager.PERMISSION_GRANTED
         ) {
-            loadSims(
-                openDialog =
-                    false
-            )
+            loadSims(openDialog = false)
         }
     }
 
     fun openSimPicker() {
-
         if (
-            ContextCompat
-                .checkSelfPermission(
-                    context,
-                    Manifest.permission.READ_PHONE_STATE
-                ) ==
-            PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_PHONE_STATE
+            ) == PackageManager.PERMISSION_GRANTED
         ) {
-
-            loadSims(
-                openDialog =
-                    true
-            )
-
+            loadSims(openDialog = true)
         } else {
-
             phonePermissionLauncher.launch(
                 Manifest.permission.READ_PHONE_STATE
             )
@@ -2655,127 +1377,71 @@ private fun SettingsScreen(
     }
 
     val currentSimLabel =
-
         if (
             selectedSimId ==
-            SubscriptionManager
-                .INVALID_SUBSCRIPTION_ID
+            SubscriptionManager.INVALID_SUBSCRIPTION_ID
         ) {
-
             "پیش‌فرض سیستم"
-
         } else {
-
             sims.firstOrNull {
-                it.subscriptionId ==
-                    selectedSimId
+                it.subscriptionId == selectedSimId
             }?.let {
                 "SIM ${it.slotIndex + 1} - ${it.label}"
             } ?: "سیم‌کارت انتخاب‌شده"
         }
 
     LazyColumn(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal =
-                        16.dp
-                ),
-
-        verticalArrangement =
-            Arrangement.spacedBy(
-                14.dp
-            )
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-
         item {
-
             Text(
                 "تنظیمات",
-                modifier =
-                    Modifier.padding(
-                        top = 12.dp
-                    ),
-                fontSize =
-                    22.sp,
-                fontWeight =
-                    FontWeight.Bold
+                modifier = Modifier.padding(top = 12.dp),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
             )
         }
 
         item {
-
             ElevatedCard(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            openSimPicker()
-                        },
-
-                shape =
-                    RoundedCornerShape(
-                        18.dp
-                    )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { openSimPicker() },
+                shape = RoundedCornerShape(18.dp)
             ) {
-
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                18.dp
-                            ),
-
-                    verticalAlignment =
-                        Alignment.CenterVertically
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Icon(
-                        Icons
-                            .Outlined
-                            .SimCard,
+                        Icons.Outlined.SimCard,
                         null,
-
-                        tint =
-                            MaterialTheme
-                                .colorScheme
-                                .primary
+                        tint = MaterialTheme.colorScheme.primary
                     )
 
-                    Spacer(
-                        Modifier.width(
-                            12.dp
-                        )
-                    )
+                    Spacer(Modifier.width(12.dp))
 
                     Column(
-                        modifier =
-                            Modifier.weight(
-                                1f
-                            )
+                        modifier = Modifier.weight(1f)
                     ) {
-
                         Text(
                             "سیم‌کارت پیش‌فرض",
-
-                            fontWeight =
-                                FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
 
                         Text(
                             currentSimLabel,
-
-                            fontSize =
-                                12.sp
+                            fontSize = 12.sp
                         )
                     }
 
                     Icon(
-                        Icons
-                            .Outlined
-                            .KeyboardArrowDown,
+                        Icons.Outlined.KeyboardArrowDown,
                         null
                     )
                 }
@@ -2783,116 +1449,64 @@ private fun SettingsScreen(
         }
 
         item {
-
             ElevatedCard(
-                modifier =
-                    Modifier.fillMaxWidth(),
-
-                shape =
-                    RoundedCornerShape(
-                        18.dp
-                    )
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp)
             ) {
-
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                18.dp
-                            ),
-
-                    verticalAlignment =
-                        Alignment.CenterVertically
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Column(
-                        modifier =
-                            Modifier.weight(
-                                1f
-                            )
+                        modifier = Modifier.weight(1f)
                     ) {
-
                         Text(
                             "تأیید قبل از ارسال",
-
-                            fontWeight =
-                                FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
 
                         Text(
                             "قبل از ارسال، گیرنده و متن نمایش داده شود.",
-
-                            fontSize =
-                                12.sp
+                            fontSize = 12.sp
                         )
                     }
 
                     Switch(
-                        checked =
-                            confirmBeforeSend,
-
-                        onCheckedChange =
-                            onConfirmChanged
+                        checked = confirmBeforeSend,
+                        onCheckedChange = onConfirmChanged
                     )
                 }
             }
         }
 
         item {
-
             ElevatedCard(
-                modifier =
-                    Modifier.fillMaxWidth(),
-
-                shape =
-                    RoundedCornerShape(
-                        18.dp
-                    )
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp)
             ) {
-
                 Row(
-                    modifier =
-                        Modifier.padding(
-                            18.dp
-                        ),
-
-                    verticalAlignment =
-                        Alignment.CenterVertically
+                    modifier = Modifier.padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Icon(
-                        Icons
-                            .Outlined
-                            .Info,
+                        Icons.Outlined.Info,
                         null,
-
-                        tint =
-                            MaterialTheme
-                                .colorScheme
-                                .primary
+                        tint = MaterialTheme.colorScheme.primary
                     )
 
-                    Spacer(
-                        Modifier.width(
-                            12.dp
-                        )
-                    )
+                    Spacer(Modifier.width(12.dp))
 
                     Column {
-
                         Text(
                             "پیامک طولانی",
-
-                            fontWeight =
-                                FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
 
                         Text(
                             "نسخه 2.0",
-
-                            fontSize =
-                                12.sp
+                            fontSize = 12.sp
                         )
                     }
                 }
@@ -2901,129 +1515,68 @@ private fun SettingsScreen(
     }
 
     if (showSimDialog) {
-
         AlertDialog(
-            onDismissRequest = {
-                showSimDialog =
-                    false
-            },
-
-            title = {
-                Text(
-                    "انتخاب سیم‌کارت"
-                )
-            },
-
+            onDismissRequest = { showSimDialog = false },
+            title = { Text("انتخاب سیم‌کارت") },
             text = {
-
                 LazyColumn(
-                    modifier =
-                        Modifier.heightIn(
-                            max = 400.dp
-                        )
+                    modifier = Modifier.heightIn(max = 400.dp)
                 ) {
-
                     item {
-
                         ListItem(
                             headlineContent = {
-
-                                Text(
-                                    "پیش‌فرض سیستم"
-                                )
+                                Text("پیش‌فرض سیستم")
                             },
-
                             leadingContent = {
-
                                 RadioButton(
                                     selected =
                                         selectedSimId ==
-                                            SubscriptionManager
-                                                .INVALID_SUBSCRIPTION_ID,
-
+                                            SubscriptionManager.INVALID_SUBSCRIPTION_ID,
                                     onClick = {
-
                                         onSelectedSimChanged(
-                                            SubscriptionManager
-                                                .INVALID_SUBSCRIPTION_ID
+                                            SubscriptionManager.INVALID_SUBSCRIPTION_ID
                                         )
-
-                                        showSimDialog =
-                                            false
+                                        showSimDialog = false
                                     }
                                 )
                             },
-
-                            modifier =
-                                Modifier.clickable {
-
-                                    onSelectedSimChanged(
-                                        SubscriptionManager
-                                            .INVALID_SUBSCRIPTION_ID
-                                    )
-
-                                    showSimDialog =
-                                        false
-                                }
+                            modifier = Modifier.clickable {
+                                onSelectedSimChanged(
+                                    SubscriptionManager.INVALID_SUBSCRIPTION_ID
+                                )
+                                showSimDialog = false
+                            }
                         )
                     }
 
                     items(
                         sims,
-                        key = {
-                            it.subscriptionId
-                        }
+                        key = { it.subscriptionId }
                     ) { sim ->
-
                         ListItem(
                             headlineContent = {
-
-                                Text(
-                                    "SIM ${sim.slotIndex + 1}"
-                                )
+                                Text("SIM ${sim.slotIndex + 1}")
                             },
-
                             supportingContent = {
-
-                                Text(
-                                    sim.label
-                                )
+                                Text(sim.label)
                             },
-
                             leadingContent = {
-
                                 RadioButton(
-                                    selected =
-                                        selectedSimId ==
-                                            sim.subscriptionId,
-
+                                    selected = selectedSimId == sim.subscriptionId,
                                     onClick = {
-
-                                        onSelectedSimChanged(
-                                            sim.subscriptionId
-                                        )
-
-                                        showSimDialog =
-                                            false
+                                        onSelectedSimChanged(sim.subscriptionId)
+                                        showSimDialog = false
                                     }
                                 )
                             },
-
-                            modifier =
-                                Modifier.clickable {
-
-                                    onSelectedSimChanged(
-                                        sim.subscriptionId
-                                    )
-
-                                    showSimDialog =
-                                        false
-                                }
+                            modifier = Modifier.clickable {
+                                onSelectedSimChanged(sim.subscriptionId)
+                                showSimDialog = false
+                            }
                         )
                     }
                 }
             },
-
             confirmButton = {}
         )
     }
@@ -3042,103 +1595,50 @@ private object ContactRepository {
         val result =
             mutableListOf<GroupMember>()
 
-        context.contentResolver
-            .query(
-                ContactsContract
-                    .CommonDataKinds
-                    .Phone
-                    .CONTENT_URI,
+        context.contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            ),
+            null,
+            null,
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+        )?.use { cursor ->
 
-                arrayOf(
-                    ContactsContract
-                        .CommonDataKinds
-                        .Phone
-                        .DISPLAY_NAME,
-
-                    ContactsContract
-                        .CommonDataKinds
-                        .Phone
-                        .NUMBER
-                ),
-
-                null,
-                null,
-
-                ContactsContract
-                    .CommonDataKinds
-                    .Phone
-                    .DISPLAY_NAME +
-                    " ASC"
+            val nameIndex = cursor.getColumnIndex(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
             )
-            ?.use { cursor ->
 
-                val nameIndex =
-                    cursor.getColumnIndex(
-                        ContactsContract
-                            .CommonDataKinds
-                            .Phone
-                            .DISPLAY_NAME
-                    )
+            val phoneIndex = cursor.getColumnIndex(
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            )
 
-                val phoneIndex =
-                    cursor.getColumnIndex(
-                        ContactsContract
-                            .CommonDataKinds
-                            .Phone
-                            .NUMBER
-                    )
+            while (cursor.moveToNext()) {
+                if (phoneIndex < 0) continue
 
-                while (
-                    cursor.moveToNext()
-                ) {
+                val phone = cursor.getString(phoneIndex).orEmpty()
 
-                    if (
-                        phoneIndex < 0
-                    ) continue
+                val name =
+                    if (nameIndex >= 0)
+                        cursor.getString(nameIndex).orEmpty()
+                    else
+                        phone
 
-                    val phone =
-                        cursor
-                            .getString(
-                                phoneIndex
-                            )
-                            .orEmpty()
-
-                    val name =
-                        if (
-                            nameIndex >= 0
+                if (normalizePhone(phone).isNotBlank()) {
+                    result.add(
+                        GroupMember(
+                            name = name,
+                            phone = phone
                         )
-                            cursor
-                                .getString(
-                                    nameIndex
-                                )
-                                .orEmpty()
-                        else
-                            phone
-
-                    if (
-                        normalizePhone(
-                            phone
-                        ).isNotBlank()
-                    ) {
-
-                        result.add(
-                            GroupMember(
-                                name =
-                                    name,
-
-                                phone =
-                                    phone
-                            )
-                        )
-                    }
+                    )
                 }
             }
+        }
 
         return result
             .distinctBy {
-                normalizePhone(
-                    it.phone
-                )
+                normalizePhone(it.phone)
             }
             .sortedBy {
                 it.name
@@ -3148,9 +1648,7 @@ private object ContactRepository {
 
 private object SimRepository {
 
-    @SuppressLint(
-        "MissingPermission"
-    )
+    @SuppressLint("MissingPermission")
     fun load(
         context: Context
     ): List<SimOption> {
@@ -3167,20 +1665,13 @@ private object SimRepository {
                 it.simSlotIndex
             }
             .map { info ->
-
                 SimOption(
-                    subscriptionId =
-                        info.subscriptionId,
-
-                    slotIndex =
-                        info.simSlotIndex,
-
+                    subscriptionId = info.subscriptionId,
+                    slotIndex = info.simSlotIndex,
                     label =
                         info.displayName
                             ?.toString()
-                            ?.takeIf {
-                                it.isNotBlank()
-                            }
+                            ?.takeIf { it.isNotBlank() }
                             ?: "SIM ${info.simSlotIndex + 1}"
                 )
             }
@@ -3195,59 +1686,39 @@ private object LongSmsSender {
         phone: String,
         message: String
     ) {
+        val destination = normalizePhone(phone)
 
-        val destination =
-            normalizePhone(
-                phone
-            )
-
-        require(
-            destination.isNotBlank()
-        ) {
+        require(destination.isNotBlank()) {
             "شماره گیرنده معتبر نیست."
         }
 
-        require(
-            message.isNotBlank()
-        ) {
+        require(message.isNotBlank()) {
             "متن پیام خالی است."
         }
 
-        val smsManager =
-            getSmsManager(
-                context,
-                subscriptionId
+        val smsManager = getSmsManager(
+            context,
+            subscriptionId
+        )
+
+        val parts = smsManager.divideMessage(message)
+
+        if (parts.size > 1) {
+            smsManager.sendMultipartTextMessage(
+                destination,
+                null,
+                ArrayList(parts),
+                null,
+                null
             )
-
-        val parts =
-            smsManager
-                .divideMessage(
-                    message
-                )
-
-        if (
-            parts.size > 1
-        ) {
-
-            smsManager
-                .sendMultipartTextMessage(
-                    destination,
-                    null,
-                    ArrayList(parts),
-                    null,
-                    null
-                )
-
         } else {
-
-            smsManager
-                .sendTextMessage(
-                    destination,
-                    null,
-                    message,
-                    null,
-                    null
-                )
+            smsManager.sendTextMessage(
+                destination,
+                null,
+                message,
+                null,
+                null
+            )
         }
     }
 
@@ -3256,7 +1727,6 @@ private object LongSmsSender {
         context: Context,
         subscriptionId: Int
     ): SmsManager {
-
         val defaultManager =
             context.getSystemService(
                 SmsManager::class.java
@@ -3264,8 +1734,7 @@ private object LongSmsSender {
 
         if (
             subscriptionId ==
-            SubscriptionManager
-                .INVALID_SUBSCRIPTION_ID
+            SubscriptionManager.INVALID_SUBSCRIPTION_ID
         ) {
             return defaultManager
         }
@@ -3274,18 +1743,13 @@ private object LongSmsSender {
             Build.VERSION.SDK_INT >=
             Build.VERSION_CODES.S
         ) {
-
-            defaultManager
-                .createForSubscriptionId(
-                    subscriptionId
-                )
-
+            defaultManager.createForSubscriptionId(
+                subscriptionId
+            )
         } else {
-
-            SmsManager
-                .getSmsManagerForSubscriptionId(
-                    subscriptionId
-                )
+            SmsManager.getSmsManagerForSubscriptionId(
+                subscriptionId
+            )
         }
     }
 }
@@ -3293,43 +1757,35 @@ private object LongSmsSender {
 private fun normalizePhone(
     phone: String
 ): String {
+    val converted = phone.map { char ->
+        when (char) {
+            '۰' -> '0'
+            '۱' -> '1'
+            '۲' -> '2'
+            '۳' -> '3'
+            '۴' -> '4'
+            '۵' -> '5'
+            '۶' -> '6'
+            '۷' -> '7'
+            '۸' -> '8'
+            '۹' -> '9'
 
-    val converted =
-        phone.map { char ->
+            '٠' -> '0'
+            '١' -> '1'
+            '٢' -> '2'
+            '٣' -> '3'
+            '٤' -> '4'
+            '٥' -> '5'
+            '٦' -> '6'
+            '٧' -> '7'
+            '٨' -> '8'
+            '٩' -> '9'
 
-            when (char) {
-
-                '۰' -> '0'
-                '۱' -> '1'
-                '۲' -> '2'
-                '۳' -> '3'
-                '۴' -> '4'
-                '۵' -> '5'
-                '۶' -> '6'
-                '۷' -> '7'
-                '۸' -> '8'
-                '۹' -> '9'
-
-                '٠' -> '0'
-                '١' -> '1'
-                '٢' -> '2'
-                '٣' -> '3'
-                '٤' -> '4'
-                '٥' -> '5'
-                '٦' -> '6'
-                '٧' -> '7'
-                '٨' -> '8'
-                '٩' -> '9'
-
-                else ->
-                    char
-            }
+            else -> char
         }
-        .joinToString("")
+    }.joinToString("")
 
-    return converted
-        .filter {
-            it.isDigit() ||
-                it == '+'
-        }
+    return converted.filter {
+        it.isDigit() || it == '+'
+    }
 }

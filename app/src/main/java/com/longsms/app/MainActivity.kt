@@ -1726,15 +1726,15 @@ private fun ProfessionalContactRow(
                         contact.phone
                     },
                 fontSize = 14.sp,
+                lineHeight = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1
             )
 
-            Spacer(Modifier.height(0.dp))
-
             Text(
                 text = contact.phone,
                 fontSize = 11.sp,
+                lineHeight = 12.sp,
                 color =
                     MaterialTheme
                         .colorScheme

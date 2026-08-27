@@ -460,7 +460,7 @@ private fun AppHeader(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(82.dp)
+                    .height(74.dp)
                     .padding(
                         start = 22.dp,
                         end = 22.dp
@@ -477,7 +477,7 @@ private fun AppHeader(
                     onClick = onToggleTheme
                 )
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(10.dp))
 
                 HeaderIconButton(
                     icon = Icons.Outlined.Info,
@@ -490,8 +490,8 @@ private fun AppHeader(
                 Text(
                     text = title,
                     textAlign = TextAlign.End,
-                    fontSize = 27.sp,
-                    lineHeight = 32.sp,
+                    fontSize = 24.sp,
+                    lineHeight = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
@@ -682,8 +682,8 @@ private fun SendScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    horizontal = 20.dp,
-                    vertical = 12.dp
+                    horizontal = 16.dp,
+                    vertical = 10.dp
                 )
         ) {
             RecipientModeSelector(
@@ -693,27 +693,27 @@ private fun SendScreen(
                 }
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
             if (recipientMode == RecipientMode.PERSON) {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(94.dp),
-                    shape = RoundedCornerShape(28.dp),
+                        .height(80.dp),
+                    shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 3.dp
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 14.dp),
+                            .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Person,
                             contentDescription = null,
-                            modifier = Modifier.size(30.dp),
+                            modifier = Modifier.size(22.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
 
@@ -755,7 +755,7 @@ private fun SendScreen(
                                 ),
                             textStyle =
                                 MaterialTheme.typography.bodyLarge.copy(
-                                    fontSize = 17.sp
+                                    fontSize = 15.sp
                                 ),
                             trailingIcon = {
                                 if (contactName.isNotBlank()) {
@@ -778,7 +778,7 @@ private fun SendScreen(
 
                         Surface(
                             modifier = Modifier
-                                .size(52.dp)
+                                .size(42.dp)
                                 .clickable {
                                     contactPicker.launch(
                                         Intent(
@@ -790,7 +790,7 @@ private fun SendScreen(
                                         )
                                     )
                                 },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(14.dp),
                             color =
                                 MaterialTheme.colorScheme.primary
                                     .copy(alpha = 0.07f),
@@ -807,7 +807,7 @@ private fun SendScreen(
                                 Icon(
                                     Icons.Outlined.Contacts,
                                     "انتخاب مخاطب",
-                                    modifier = Modifier.size(27.dp),
+                                    modifier = Modifier.size(23.dp),
                                     tint =
                                         MaterialTheme.colorScheme.primary
                                 )
@@ -838,7 +838,7 @@ private fun SendScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(40.dp),
                             shape = CircleShape,
                             color =
                                 MaterialTheme.colorScheme.primary
@@ -856,7 +856,7 @@ private fun SendScreen(
                             }
                         }
 
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(10.dp))
 
                         Column(
                             modifier = Modifier.weight(1f)
@@ -864,7 +864,7 @@ private fun SendScreen(
                             Text(
                                 selectedGroup?.name
                                     ?: "انتخاب گروه",
-                                fontSize = 17.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
 
@@ -881,7 +881,7 @@ private fun SendScreen(
                                     else ->
                                         "برای انتخاب لمس کنید"
                                 },
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 color =
                                     MaterialTheme.colorScheme.onSurface
                                         .copy(alpha = 0.52f)
@@ -905,14 +905,14 @@ private fun SendScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 5.dp
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(14.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -921,7 +921,7 @@ private fun SendScreen(
                         Icon(
                             Icons.Outlined.ChatBubbleOutline,
                             null,
-                            modifier = Modifier.size(26.dp),
+                            modifier = Modifier.size(22.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
 
@@ -929,12 +929,12 @@ private fun SendScreen(
 
                         Text(
                             "متن پیام",
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(6.dp))
 
                     OutlinedTextField(
                         value = message,
@@ -957,10 +957,10 @@ private fun SendScreen(
                         maxLines = Int.MAX_VALUE,
                         textStyle =
                             MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 16.sp,
-                                lineHeight = 26.sp
+                                fontSize = 15.sp,
+                                lineHeight = 22.sp
                             ),
-                        shape = RoundedCornerShape(22.dp),
+                        shape = RoundedCornerShape(20.dp),
                         colors =
                             OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor =
@@ -974,13 +974,13 @@ private fun SendScreen(
                             )
                     )
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
 
                     Text(
                         "${message.length} کاراکتر",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.End,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         color =
                             MaterialTheme.colorScheme.onSurface
                                 .copy(alpha = 0.55f)
@@ -988,12 +988,12 @@ private fun SendScreen(
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
 
             PrimaryActionButton(
                 text = "ارسال پیام",
                 modifier = Modifier.fillMaxWidth(),
-                height = 64.dp,
+                height = 56.dp,
                 onClick = {
                     val targets = targetNumbers()
 
@@ -1025,7 +1025,7 @@ private fun SendScreen(
                 }
             )
 
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(1.dp))
         }
 
         SnackbarHost(
@@ -1198,7 +1198,7 @@ private fun GroupsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 28.dp),
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 4.dp
                 ) {
@@ -1403,7 +1403,7 @@ private fun GroupEditorDialog(
                         }
                     }
 
-                    Spacer(Modifier.width(9.dp))
+                    Spacer(Modifier.width(6.dp))
 
                     Text(
                         text =
@@ -1418,7 +1418,7 @@ private fun GroupEditorDialog(
                     )
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Group name
                 OutlinedTextField(
@@ -1616,7 +1616,7 @@ private fun GroupEditorDialog(
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Bottom actions
                 Row(
@@ -2027,7 +2027,7 @@ private fun HeaderIconButton(
 
     Box(
         modifier = Modifier
-            .size(52.dp)
+            .size(44.dp)
             .shadow(
                 elevation = 2.dp,
                 shape = shape,
@@ -2053,7 +2053,7 @@ private fun HeaderIconButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(29.dp),
+            modifier = Modifier.size(24.dp),
             tint = MaterialTheme.colorScheme.onSurface
         )
     }
@@ -2080,10 +2080,10 @@ private fun AppBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .height(88.dp)
+                .height(76.dp)
                 .padding(
-                    horizontal = 14.dp,
-                    vertical = 7.dp
+                    horizontal = 12.dp,
+                    vertical = 5.dp
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2140,10 +2140,10 @@ private fun AppBottomItem(
         Box(
             modifier = Modifier
                 .size(
-                    width = 78.dp,
-                    height = 42.dp
+                    width = 66.dp,
+                    height = 36.dp
                 )
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(
                     if (selected)
                         MaterialTheme.colorScheme.primary
@@ -2156,7 +2156,7 @@ private fun AppBottomItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(29.dp),
+                modifier = Modifier.size(24.dp),
                 tint =
                     if (selected)
                         MaterialTheme.colorScheme.primary
@@ -2166,11 +2166,11 @@ private fun AppBottomItem(
             )
         }
 
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(1.dp))
 
         Text(
             text = label,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             fontWeight =
                 if (selected)
                     FontWeight.SemiBold
@@ -2198,7 +2198,7 @@ private fun GroupListCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 3.dp
     ) {
@@ -2212,7 +2212,7 @@ private fun GroupListCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(40.dp),
                 shape = CircleShape,
                 color =
                     MaterialTheme.colorScheme.primary
@@ -2230,7 +2230,7 @@ private fun GroupListCard(
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
@@ -2383,7 +2383,7 @@ private fun SettingsOptionRow(
             }
         }
 
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(10.dp))
 
         Column(
             modifier = Modifier.weight(1f)
@@ -2395,7 +2395,7 @@ private fun SettingsOptionRow(
                 fontWeight = FontWeight.SemiBold
             )
 
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(1.dp))
 
             Text(
                 subtitle,
@@ -2476,7 +2476,7 @@ private fun SimPickerDialog(
                 )
 
                 sims.forEach { sim ->
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
 
                     SimChoiceRow(
                         title = "SIM ${sim.slotIndex + 1}",
@@ -2491,7 +2491,7 @@ private fun SimPickerDialog(
                     )
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 PrimaryActionButton(
                     text = "انتخاب",
@@ -2560,7 +2560,7 @@ private fun SimChoiceRow(
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
@@ -2597,7 +2597,7 @@ private fun PrimaryActionButton(
     enabled: Boolean = true,
     height: Dp = 56.dp
 ) {
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(24.dp)
 
     Box(
         modifier = modifier
@@ -2626,7 +2626,7 @@ private fun PrimaryActionButton(
         Text(
             text = text,
             color = Color.White,
-            fontSize = 17.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold
         )
     }
@@ -2641,7 +2641,7 @@ private fun SecondaryActionButton(
     enabled: Boolean = true,
     height: Dp = 56.dp
 ) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(20.dp)
 
     Surface(
         modifier = modifier
@@ -2743,12 +2743,12 @@ private fun RecipientModeSelector(
     selected: RecipientMode,
     onSelected: (RecipientMode) -> Unit
 ) {
-    val shape = RoundedCornerShape(34.dp)
+    val shape = RoundedCornerShape(24.dp)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .height(62.dp)
             .shadow(
                 elevation = 3.dp,
                 shape = shape,
@@ -2805,7 +2805,7 @@ private fun RecipientModeItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(29.dp)
+    val shape = RoundedCornerShape(24.dp)
 
     Box(
         modifier = modifier
@@ -2835,7 +2835,7 @@ private fun RecipientModeItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(27.dp),
+                modifier = Modifier.size(23.dp),
                 tint =
                     if (selected)
                         Color.White
@@ -2844,7 +2844,7 @@ private fun RecipientModeItem(
                             .copy(alpha = 0.76f)
             )
 
-            Spacer(Modifier.width(9.dp))
+            Spacer(Modifier.width(6.dp))
 
             Text(
                 text = text,
@@ -2853,7 +2853,7 @@ private fun RecipientModeItem(
                         Color.White
                     else
                         MaterialTheme.colorScheme.onSurface,
-                fontSize = 17.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -2880,10 +2880,10 @@ private fun GroupPickerDialog(
                 .fillMaxHeight(0.68f)
                 .shadow(
                     18.dp,
-                    RoundedCornerShape(28.dp)
+                    RoundedCornerShape(24.dp)
                 ),
             shape =
-                RoundedCornerShape(28.dp),
+                RoundedCornerShape(24.dp),
             color =
                 MaterialTheme
                     .colorScheme
@@ -3568,7 +3568,7 @@ private fun AboutAppDialog(
     ) {
         Surface(
             shape =
-                RoundedCornerShape(28.dp),
+                RoundedCornerShape(24.dp),
             color =
                 MaterialTheme
                     .colorScheme

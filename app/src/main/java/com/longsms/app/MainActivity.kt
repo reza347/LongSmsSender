@@ -578,11 +578,9 @@ private fun SendScreen(
 
     fun sendNow() {
 
-        val targets =
-            targetNumbers()
+        val targets = targetNumbers()
 
         if (targets.isEmpty()) {
-
             scope.launch {
                 snackbar.showSnackbar(
                     if (recipientMode == RecipientMode.GROUP)
@@ -591,18 +589,15 @@ private fun SendScreen(
                         "شماره گیرنده را وارد کنید."
                 )
             }
-
             return
         }
 
         if (message.isBlank()) {
-
             scope.launch {
                 snackbar.showSnackbar(
                     "متن پیام را وارد کنید."
                 )
             }
-
             return
         }
 
@@ -611,7 +606,6 @@ private fun SendScreen(
             try {
 
                 targets.forEach { number ->
-
                     LongSmsSender.send(
                         context = context,
                         subscriptionId = selectedSimId,
@@ -633,8 +627,7 @@ private fun SendScreen(
 
                 scope.launch {
                     snackbar.showSnackbar(
-                        e.message
-                            ?: "ارسال پیام ناموفق بود."
+                        e.message ?: "ارسال پیام ناموفق بود."
                     )
                 }
             }
@@ -645,231 +638,34 @@ private fun SendScreen(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        LazyColumn(
+        // صفحه اصلی عمداً اسکرول ندارد.
+        // ارتفاع کادر پیام با weight تنظیم می‌شود و خود TextField
+        // در صورت طولانی شدن متن، اسکرول داخلی دارد.
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalArrangement =
-                Arrangement.spacedBy(14.dp)
+                .padding(
+                    horizontal = 14.dp,
+                    vertical = 8.dp
+                )
         ) {
 
-            item {
-                Spacer(
-                    Modifier.height(4.dp)
-                )
-            }
+            RecipientModeSelector(
+                selected = recipientMode,
+                onSelected = {
+                    recipientMode = it
+                }
+            )
 
-            item {
-                RecipientModeSelector(
-                    selected = recipientMode,
-                    onSelected = {
-                        recipientMode = it
-                    }
-                )
-            }
+            Spacer(
+                Modifier.height(8.dp)
+            )
 
             if (recipientMode == RecipientMode.PERSON) {
 
-                item {
-                    ElevatedCard(
-                        modifier =
-                            Modifier.fillMaxWidth(),
-                        shape =
-                            RoundedCornerShape(22.dp),
-                        colors =
-                            CardDefaults.elevatedCardColors(
-                                containerColor =
-                                    MaterialTheme.colorScheme.surface
-                            ),
-                        elevation =
-                            CardDefaults.elevatedCardElevation(
-                                defaultElevation = 2.dp
-                            )
-                    ) {
-
-                        OutlinedTextField(
-                            value = phone,
-                            onValueChange = {
-                                phone = it
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            label = {
-                                Text(
-                                    "شماره گیرنده"
-                                )
-                            },
-                            placeholder = {
-                                Text(
-                                    "09123456789"
-                                )
-                            },
-                            singleLine = true,
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    keyboardType =
-                                        KeyboardType.Phone
-                                ),
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Person,
-                                    null
-                                )
-                            },
-                            trailingIcon = {
-
-                                IconButton(
-                                    onClick = {
-
-                                        contactPicker.launch(
-                                            Intent(
-                                                Intent.ACTION_PICK,
-                                                ContactsContract
-                                                    .CommonDataKinds
-                                                    .Phone
-                                                    .CONTENT_URI
-                                            )
-                                        )
-                                    }
-                                ) {
-
-                                    Icon(
-                                        Icons.Outlined.Contacts,
-                                        "انتخاب مخاطب"
-                                    )
-                                }
-                            },
-                            shape =
-                                RoundedCornerShape(16.dp)
-                        )
-                    }
-                }
-
-            } else {
-
-                item {
-
-                    ElevatedCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-
-                                if (groups.isEmpty()) {
-                                    onOpenGroups()
-                                } else {
-                                    showGroupPicker = true
-                                }
-                            },
-                        shape =
-                            RoundedCornerShape(22.dp),
-                        colors =
-                            CardDefaults.elevatedCardColors(
-                                containerColor =
-                                    MaterialTheme.colorScheme.surface
-                            ),
-                        elevation =
-                            CardDefaults.elevatedCardElevation(
-                                defaultElevation = 2.dp
-                            )
-                    ) {
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(18.dp),
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
-
-                            Surface(
-                                modifier =
-                                    Modifier.size(48.dp),
-                                shape = CircleShape,
-                                color =
-                                    MaterialTheme
-                                        .colorScheme
-                                        .primary
-                                        .copy(alpha = 0.12f)
-                            ) {
-
-                                Box(
-                                    contentAlignment =
-                                        Alignment.Center
-                                ) {
-
-                                    Icon(
-                                        Icons.Outlined.Groups,
-                                        null,
-                                        tint =
-                                            MaterialTheme
-                                                .colorScheme
-                                                .primary
-                                    )
-                                }
-                            }
-
-                            Spacer(
-                                Modifier.width(12.dp)
-                            )
-
-                            Column(
-                                modifier =
-                                    Modifier.weight(1f)
-                            ) {
-
-                                Text(
-                                    selectedGroup?.name
-                                        ?: "انتخاب گروه",
-                                    style =
-                                        MaterialTheme
-                                            .typography
-                                            .titleMedium
-                                )
-
-                                Spacer(
-                                    Modifier.height(2.dp)
-                                )
-
-                                Text(
-                                    when {
-                                        groups.isEmpty() ->
-                                            "ابتدا یک گروه بسازید"
-
-                                        selectedGroup != null ->
-                                            "${selectedGroup.members.size} مخاطب"
-
-                                        else ->
-                                            "برای انتخاب لمس کنید"
-                                    },
-                                    style =
-                                        MaterialTheme
-                                            .typography
-                                            .bodyMedium,
-                                    color =
-                                        MaterialTheme
-                                            .colorScheme
-                                            .onSurface
-                                            .copy(alpha = 0.65f)
-                                )
-                            }
-
-                            Icon(
-                                Icons.Outlined.KeyboardArrowDown,
-                                null
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
-
                 ElevatedCard(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    shape =
-                        RoundedCornerShape(22.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
                     colors =
                         CardDefaults.elevatedCardColors(
                             containerColor =
@@ -881,121 +677,304 @@ private fun SendScreen(
                         )
                 ) {
 
-                    Column(
-                        modifier =
-                            Modifier.padding(16.dp)
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = {
+                            phone = it
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = 10.dp,
+                                vertical = 8.dp
+                            ),
+                        label = {
+                            Text("شماره گیرنده")
+                        },
+                        placeholder = {
+                            Text("09123456789")
+                        },
+                        singleLine = true,
+                        keyboardOptions =
+                            KeyboardOptions(
+                                keyboardType =
+                                    KeyboardType.Phone
+                            ),
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Person,
+                                null
+                            )
+                        },
+                        trailingIcon = {
+
+                            IconButton(
+                                onClick = {
+                                    contactPicker.launch(
+                                        Intent(
+                                            Intent.ACTION_PICK,
+                                            ContactsContract
+                                                .CommonDataKinds
+                                                .Phone
+                                                .CONTENT_URI
+                                        )
+                                    )
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Contacts,
+                                    "انتخاب مخاطب"
+                                )
+                            }
+                        },
+                        shape =
+                            RoundedCornerShape(16.dp)
+                    )
+                }
+
+            } else {
+
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+
+                            if (groups.isEmpty()) {
+                                onOpenGroups()
+                            } else {
+                                showGroupPicker = true
+                            }
+                        },
+                    shape = RoundedCornerShape(20.dp),
+                    colors =
+                        CardDefaults.elevatedCardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.surface
+                        ),
+                    elevation =
+                        CardDefaults.elevatedCardElevation(
+                            defaultElevation = 2.dp
+                        )
+                ) {
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = 14.dp,
+                                vertical = 10.dp
+                            ),
+                        verticalAlignment =
+                            Alignment.CenterVertically
                     ) {
 
-                        Text(
-                            "متن پیام",
-                            style =
-                                MaterialTheme
-                                    .typography
-                                    .titleMedium
-                        )
-
-                        Spacer(
-                            Modifier.height(10.dp)
-                        )
-
-                        OutlinedTextField(
-                            value = message,
-                            onValueChange = {
-                                message = it
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(
-                                    min = 270.dp
-                                ),
-                            placeholder = {
-                                Text(
-                                    "متن طولانی خود را اینجا بنویسید..."
-                                )
-                            },
-                            minLines = 10,
-                            maxLines = 20,
-                            textStyle =
-                                MaterialTheme
-                                    .typography
-                                    .bodyLarge,
-                            shape =
-                                RoundedCornerShape(18.dp)
-                        )
-
-                        Spacer(
-                            Modifier.height(10.dp)
-                        )
-
-                        Text(
-                            "${message.length} کاراکتر",
+                        Surface(
                             modifier =
-                                Modifier.fillMaxWidth(),
-                            textAlign =
-                                TextAlign.End,
-                            style =
-                                MaterialTheme
-                                    .typography
-                                    .bodyMedium,
+                                Modifier.size(42.dp),
+                            shape = CircleShape,
                             color =
                                 MaterialTheme
                                     .colorScheme
-                                    .onSurface
-                                    .copy(alpha = 0.65f)
+                                    .primary
+                                    .copy(alpha = 0.12f)
+                        ) {
+                            Box(
+                                contentAlignment =
+                                    Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Groups,
+                                    null,
+                                    tint =
+                                        MaterialTheme
+                                            .colorScheme
+                                            .primary
+                                )
+                            }
+                        }
+
+                        Spacer(
+                            Modifier.width(10.dp)
+                        )
+
+                        Column(
+                            modifier =
+                                Modifier.weight(1f)
+                        ) {
+
+                            Text(
+                                selectedGroup?.name
+                                    ?: "انتخاب گروه",
+                                style =
+                                    MaterialTheme
+                                        .typography
+                                        .titleMedium
+                            )
+
+                            Text(
+                                when {
+                                    groups.isEmpty() ->
+                                        "ابتدا یک گروه بسازید"
+
+                                    selectedGroup != null ->
+                                        "${selectedGroup.members.size} مخاطب"
+
+                                    else ->
+                                        "برای انتخاب لمس کنید"
+                                },
+                                style =
+                                    MaterialTheme
+                                        .typography
+                                        .bodyMedium,
+                                color =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .onSurface
+                                        .copy(alpha = 0.65f)
+                            )
+                        }
+
+                        Icon(
+                            Icons.Outlined.KeyboardArrowDown,
+                            null
                         )
                     }
                 }
             }
 
-            item {
+            Spacer(
+                Modifier.height(10.dp)
+            )
 
-                PrimaryActionButton(
-                    text = "ارسال پیام",
-                    icon = Icons.Outlined.Send,
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    onClick = {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                shape = RoundedCornerShape(20.dp),
+                colors =
+                    CardDefaults.elevatedCardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme.surface
+                    ),
+                elevation =
+                    CardDefaults.elevatedCardElevation(
+                        defaultElevation = 2.dp
+                    )
+            ) {
 
-                        val targets =
-                            targetNumbers()
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp)
+                ) {
 
-                        when {
+                    Text(
+                        "متن پیام",
+                        style =
+                            MaterialTheme
+                                .typography
+                                .titleMedium
+                    )
 
-                            targets.isEmpty() -> {
+                    Spacer(
+                        Modifier.height(6.dp)
+                    )
 
-                                scope.launch {
-                                    snackbar.showSnackbar(
-                                        "گیرنده را انتخاب کنید."
-                                    )
-                                }
-                            }
+                    // فقط این کادر هنگام طولانی شدن متن اسکرول می‌شود.
+                    OutlinedTextField(
+                        value = message,
+                        onValueChange = {
+                            message = it
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        placeholder = {
+                            Text(
+                                "متن طولانی خود را اینجا بنویسید..."
+                            )
+                        },
+                        singleLine = false,
+                        minLines = 1,
+                        maxLines = Int.MAX_VALUE,
+                        textStyle =
+                            MaterialTheme
+                                .typography
+                                .bodyLarge,
+                        shape =
+                            RoundedCornerShape(18.dp)
+                    )
 
-                            message.isBlank() -> {
+                    Spacer(
+                        Modifier.height(6.dp)
+                    )
 
-                                scope.launch {
-                                    snackbar.showSnackbar(
-                                        "متن پیام را وارد کنید."
-                                    )
-                                }
-                            }
+                    Text(
+                        "${message.length} کاراکتر",
+                        modifier =
+                            Modifier.fillMaxWidth(),
+                        textAlign =
+                            TextAlign.End,
+                        style =
+                            MaterialTheme
+                                .typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme
+                                .colorScheme
+                                .onSurface
+                                .copy(alpha = 0.65f)
+                    )
+                }
+            }
 
-                            confirmBeforeSend -> {
-                                showConfirm = true
-                            }
+            Spacer(
+                Modifier.height(10.dp)
+            )
 
-                            else -> {
-                                sendNow()
+            PrimaryActionButton(
+                text = "ارسال پیام",
+                icon = Icons.Outlined.Send,
+                height = 54.dp,
+                modifier =
+                    Modifier.fillMaxWidth(),
+                onClick = {
+
+                    val targets =
+                        targetNumbers()
+
+                    when {
+
+                        targets.isEmpty() -> {
+                            scope.launch {
+                                snackbar.showSnackbar(
+                                    "گیرنده را انتخاب کنید."
+                                )
                             }
                         }
-                    }
-                )
-            }
 
-            item {
-                Spacer(
-                    Modifier.height(12.dp)
-                )
-            }
+                        message.isBlank() -> {
+                            scope.launch {
+                                snackbar.showSnackbar(
+                                    "متن پیام را وارد کنید."
+                                )
+                            }
+                        }
+
+                        confirmBeforeSend -> {
+                            showConfirm = true
+                        }
+
+                        else -> {
+                            sendNow()
+                        }
+                    }
+                }
+            )
+
+            Spacer(
+                Modifier.height(4.dp)
+            )
         }
 
         SnackbarHost(

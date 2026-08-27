@@ -300,9 +300,9 @@ private fun SmsLongApp(
     } else {
         lightColorScheme(
             primary = AppPurple,
-            background = Color(0xFFF8F7FA),
+            background = Color(0xFFFAFAFC),
             surface = Color(0xFFFFFFFF),
-            surfaceVariant = Color(0xFFF5F1FB),
+            surfaceVariant = Color(0xFFFBF9FD),
             onBackground = Color(0xFF17151D),
             onSurface = Color(0xFF17151D),
             outline = Color(0xFF85808D),
@@ -451,20 +451,19 @@ private fun AppHeader(
     CompositionLocalProvider(
         LocalLayoutDirection provides LayoutDirection.Ltr
     ) {
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding(),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 2.dp
+                .statusBarsPadding()
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp)
+                    .height(82.dp)
                     .padding(
-                        start = 18.dp,
-                        end = 20.dp
+                        start = 22.dp,
+                        end = 22.dp
                     ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -478,7 +477,7 @@ private fun AppHeader(
                     onClick = onToggleTheme
                 )
 
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
 
                 HeaderIconButton(
                     icon = Icons.Outlined.Info,
@@ -491,13 +490,20 @@ private fun AppHeader(
                 Text(
                     text = title,
                     textAlign = TextAlign.End,
-                    fontSize = 25.sp,
-                    lineHeight = 30.sp,
+                    fontSize = 27.sp,
+                    lineHeight = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
             }
+
+            HorizontalDivider(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                color =
+                    MaterialTheme.colorScheme.outlineVariant
+                        .copy(alpha = 0.45f)
+            )
         }
     }
 }
@@ -676,8 +682,8 @@ private fun SendScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    horizontal = 18.dp,
-                    vertical = 10.dp
+                    horizontal = 20.dp,
+                    vertical = 12.dp
                 )
         ) {
             RecipientModeSelector(
@@ -687,17 +693,16 @@ private fun SendScreen(
                 }
             )
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
 
             if (recipientMode == RecipientMode.PERSON) {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(92.dp),
-                    shape = RoundedCornerShape(26.dp),
+                        .height(94.dp),
+                    shape = RoundedCornerShape(28.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 5.dp,
-                    tonalElevation = 1.dp
+                    shadowElevation = 3.dp
                 ) {
                     Row(
                         modifier = Modifier
@@ -988,7 +993,7 @@ private fun SendScreen(
             PrimaryActionButton(
                 text = "ارسال پیام",
                 modifier = Modifier.fillMaxWidth(),
-                height = 60.dp,
+                height = 64.dp,
                 onClick = {
                     val targets = targetNumbers()
 
@@ -2018,27 +2023,39 @@ private fun HeaderIconButton(
     contentDescription: String,
     onClick: () -> Unit
 ) {
-    Surface(
+    val shape = CircleShape
+
+    Box(
         modifier = Modifier
-            .size(48.dp)
-            .clickable(onClick = onClick),
-        shape = CircleShape,
-        color =
-            MaterialTheme.colorScheme.surfaceVariant
-                .copy(alpha = 0.58f),
-        shadowElevation = 3.dp
-    ) {
-        Box(
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(27.dp),
-                tint =
-                    MaterialTheme.colorScheme.onSurface
+            .size(52.dp)
+            .shadow(
+                elevation = 2.dp,
+                shape = shape,
+                clip = false
             )
-        }
+            .clip(shape)
+            .background(
+                if (MaterialTheme.colorScheme.background.luminance() > 0.5f)
+                    Color(0xFFFBFAFD)
+                else
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+            .border(
+                width = 1.dp,
+                color =
+                    MaterialTheme.colorScheme.outlineVariant
+                        .copy(alpha = 0.55f),
+                shape = shape
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(29.dp),
+            tint = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -2047,19 +2064,26 @@ private fun AppBottomBar(
     page: Page,
     onPageSelected: (Page) -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
     ) {
+        HorizontalDivider(
+            modifier = Modifier.align(Alignment.TopCenter),
+            color =
+                MaterialTheme.colorScheme.outlineVariant
+                    .copy(alpha = 0.42f)
+        )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .height(86.dp)
+                .height(88.dp)
                 .padding(
-                    horizontal = 18.dp,
-                    vertical = 8.dp
+                    horizontal = 14.dp,
+                    vertical = 7.dp
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2113,35 +2137,33 @@ private fun AppBottomItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Surface(
-            modifier =
-                Modifier.size(
-                    width = 72.dp,
-                    height = 40.dp
-                ),
-            shape = RoundedCornerShape(18.dp),
-            color =
-                if (selected)
-                    MaterialTheme.colorScheme.primary
-                        .copy(alpha = 0.09f)
-                else
-                    Color.Transparent
-        ) {
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(27.dp),
-                    tint =
-                        if (selected)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurface
-                                .copy(alpha = 0.70f)
+        Box(
+            modifier = Modifier
+                .size(
+                    width = 78.dp,
+                    height = 42.dp
                 )
-            }
+                .clip(RoundedCornerShape(22.dp))
+                .background(
+                    if (selected)
+                        MaterialTheme.colorScheme.primary
+                            .copy(alpha = 0.09f)
+                    else
+                        Color.Transparent
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(29.dp),
+                tint =
+                    if (selected)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurface
+                            .copy(alpha = 0.72f)
+            )
         }
 
         Spacer(Modifier.height(2.dp))
@@ -2159,7 +2181,7 @@ private fun AppBottomItem(
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface
-                        .copy(alpha = 0.72f)
+                        .copy(alpha = 0.70f)
         )
     }
 }
@@ -2575,55 +2597,38 @@ private fun PrimaryActionButton(
     enabled: Boolean = true,
     height: Dp = 56.dp
 ) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(28.dp)
 
     Box(
         modifier = modifier
             .height(height)
-            .alpha(
-                if (enabled)
-                    1f
-                else
-                    0.42f
+            .alpha(if (enabled) 1f else 0.42f)
+            .shadow(
+                elevation = if (enabled) 4.dp else 0.dp,
+                shape = shape,
+                clip = false
             )
             .clip(shape)
             .background(
                 Brush.horizontalGradient(
                     listOf(
-                        Color(0xFF8A3FFC),
-                        Color(0xFF6723D4)
+                        Color(0xFF8E3FFF),
+                        Color(0xFF6720D7)
                     )
                 )
             )
             .clickable(
                 enabled = enabled,
                 onClick = onClick
-            )
-            .padding(horizontal = 18.dp),
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(21.dp),
-                    tint = Color.White
-                )
-
-                Spacer(Modifier.width(7.dp))
-            }
-
-            Text(
-                text = text,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -2738,44 +2743,54 @@ private fun RecipientModeSelector(
     selected: RecipientMode,
     onSelected: (RecipientMode) -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color =
-            MaterialTheme.colorScheme.surfaceVariant
-                .copy(alpha = 0.70f),
-        shadowElevation = 2.dp
+    val shape = RoundedCornerShape(34.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .shadow(
+                elevation = 3.dp,
+                shape = shape,
+                clip = false
+            )
+            .clip(shape)
+            .background(
+                if (MaterialTheme.colorScheme.background.luminance() > 0.5f)
+                    Color(0xFFFBFAFD)
+                else
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+            .border(
+                width = 1.dp,
+                color =
+                    MaterialTheme.colorScheme.outlineVariant
+                        .copy(alpha = 0.28f),
+                shape = shape
+            )
+            .padding(6.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(6.dp),
-            horizontalArrangement =
-                Arrangement.spacedBy(6.dp)
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             RecipientModeItem(
                 text = "مخاطب",
                 icon = Icons.Outlined.Person,
-                selected =
-                    selected == RecipientMode.PERSON,
+                selected = selected == RecipientMode.PERSON,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    onSelected(
-                        RecipientMode.PERSON
-                    )
+                    onSelected(RecipientMode.PERSON)
                 }
             )
 
             RecipientModeItem(
                 text = "گروه",
                 icon = Icons.Outlined.Groups,
-                selected =
-                    selected == RecipientMode.GROUP,
+                selected = selected == RecipientMode.GROUP,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    onSelected(
-                        RecipientMode.GROUP
-                    )
+                    onSelected(RecipientMode.GROUP)
                 }
             )
         }
@@ -2790,50 +2805,46 @@ private fun RecipientModeItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(24.dp)
-
-    val baseModifier =
-        modifier
-            .height(58.dp)
-            .clip(shape)
-            .clickable(onClick = onClick)
-
-    val decorated =
-        if (selected) {
-            baseModifier.background(
-                Brush.horizontalGradient(
-                    listOf(
-                        Color(0xFF8A3FFC),
-                        Color(0xFF6723D4)
-                    )
-                )
-            )
-        } else {
-            baseModifier.background(
-                Color.Transparent
-            )
-        }
+    val shape = RoundedCornerShape(29.dp)
 
     Box(
-        modifier = decorated,
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(shape)
+            .then(
+                if (selected) {
+                    Modifier.background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color(0xFF8E3FFF),
+                                Color(0xFF6720D7)
+                            )
+                        )
+                    )
+                } else {
+                    Modifier.background(Color.Transparent)
+                }
+            )
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(25.dp),
+                modifier = Modifier.size(27.dp),
                 tint =
                     if (selected)
                         Color.White
                     else
                         MaterialTheme.colorScheme.onSurface
-                            .copy(alpha = 0.70f)
+                            .copy(alpha = 0.76f)
             )
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(9.dp))
 
             Text(
                 text = text,
@@ -2842,7 +2853,7 @@ private fun RecipientModeItem(
                         Color.White
                     else
                         MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }

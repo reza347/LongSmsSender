@@ -501,6 +501,10 @@ private fun SendScreen(
         mutableStateOf("")
     }
 
+    var contactName by rememberSaveable {
+        mutableStateOf("")
+    }
+
     var message by rememberSaveable {
         mutableStateOf("")
     }
@@ -533,6 +537,7 @@ private fun SendScreen(
                     context.contentResolver.query(
                         uri,
                         arrayOf(
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                             ContactsContract.CommonDataKinds.Phone.NUMBER
                         ),
                         null,
@@ -541,14 +546,31 @@ private fun SendScreen(
                     )?.use { cursor ->
 
                         if (cursor.moveToFirst()) {
-                            val index =
+                            val nameIndex =
+                                cursor.getColumnIndex(
+                                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                                )
+
+                            val phoneIndex =
                                 cursor.getColumnIndex(
                                     ContactsContract.CommonDataKinds.Phone.NUMBER
                                 )
 
-                            if (index >= 0) {
+                            if (phoneIndex >= 0) {
                                 phone =
-                                    cursor.getString(index).orEmpty()
+                                    cursor.getString(phoneIndex).orEmpty()
+
+                                val pickedName =
+                                    if (nameIndex >= 0)
+                                        cursor.getString(nameIndex).orEmpty()
+                                    else
+                                        ""
+
+                                contactName =
+                                    pickedName.takeIf {
+                                        it.isNotBlank() &&
+                                            normalizePhone(it) != normalizePhone(phone)
+                                    }.orEmpty()
                             }
                         }
                     }
@@ -678,9 +700,15 @@ private fun SendScreen(
                 ) {
 
                     OutlinedTextField(
-                        value = phone,
+                        value =
+                            if (contactName.isNotBlank())
+                                contactName
+                            else
+                                phone,
                         onValueChange = {
-                            phone = it
+                            if (contactName.isBlank()) {
+                                phone = it
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -689,12 +717,18 @@ private fun SendScreen(
                                 vertical = 8.dp
                             ),
                         label = {
-                            Text("شماره گیرنده")
+                            Text(
+                                if (contactName.isNotBlank())
+                                    "گیرنده"
+                                else
+                                    "شماره گیرنده"
+                            )
                         },
                         placeholder = {
                             Text("09123456789")
                         },
                         singleLine = true,
+                        readOnly = contactName.isNotBlank(),
                         keyboardOptions =
                             KeyboardOptions(
                                 keyboardType =
@@ -707,24 +741,42 @@ private fun SendScreen(
                             )
                         },
                         trailingIcon = {
-
-                            IconButton(
-                                onClick = {
-                                    contactPicker.launch(
-                                        Intent(
-                                            Intent.ACTION_PICK,
-                                            ContactsContract
-                                                .CommonDataKinds
-                                                .Phone
-                                                .CONTENT_URI
+                            Row(
+                                verticalAlignment =
+                                    Alignment.CenterVertically
+                            ) {
+                                if (contactName.isNotBlank()) {
+                                    IconButton(
+                                        onClick = {
+                                            contactName = ""
+                                            phone = ""
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.Close,
+                                            "پاک کردن مخاطب"
                                         )
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        contactPicker.launch(
+                                            Intent(
+                                                Intent.ACTION_PICK,
+                                                ContactsContract
+                                                    .CommonDataKinds
+                                                    .Phone
+                                                    .CONTENT_URI
+                                            )
+                                        )
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Contacts,
+                                        "انتخاب مخاطب"
                                     )
                                 }
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Contacts,
-                                    "انتخاب مخاطب"
-                                )
                             }
                         },
                         shape =
@@ -1018,7 +1070,7 @@ private fun SendScreen(
                 )
                     "گروه: ${selectedGroup?.name.orEmpty()}"
                 else
-                    "گیرنده: $phone",
+                    "گیرنده: ${contactName.ifBlank { phone }}",
             recipientCount =
                 targets.size,
             message = message,
@@ -1303,149 +1355,538 @@ private fun GroupEditorDialog(
             allContacts
         } else {
             allContacts.filter {
-                it.name.contains(search, ignoreCase = true) ||
+                it.name.contains(
+                    search,
+                    ignoreCase = true
+                ) ||
                     it.phone.contains(search)
             }
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.90f),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface
+                .fillMaxHeight(0.92f)
+                .padding(horizontal = 18.dp),
+            shape = RoundedCornerShape(32.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 14.dp
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        horizontal = 18.dp,
+                        vertical = 18.dp
+                    )
             ) {
-                Text(
-                    if (group.name.isBlank())
-                        "ساخت گروه"
-                    else
-                        "ویرایش گروه",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment =
+                        Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        color =
+                            MaterialTheme
+                                .colorScheme
+                                .primary
+                                .copy(alpha = 0.11f)
+                    ) {
+                        Box(
+                            contentAlignment =
+                                Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector =
+                                    if (group.name.isBlank())
+                                        Icons.Outlined.GroupAdd
+                                    else
+                                        Icons.Outlined.Groups,
+                                contentDescription = null,
+                                tint =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .primary
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Text(
+                        text =
+                            if (group.name.isBlank())
+                                "ساخت گروه"
+                            else
+                                "ویرایش گروه",
+                        modifier = Modifier.weight(1f),
+                        style =
+                            MaterialTheme
+                                .typography
+                                .titleLarge,
+                        textAlign = TextAlign.End
+                    )
+                }
+
+                Spacer(Modifier.height(18.dp))
+
+                // Group name
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = {
+                        name = it
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("نام گروه")
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(18.dp)
                 )
 
                 Spacer(Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("نام گروه") },
-                    singleLine = true
-                )
-
-                Spacer(Modifier.height(10.dp))
-
+                // Search
                 OutlinedTextField(
                     value = search,
-                    onValueChange = { search = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("جستجوی مخاطب") },
-                    leadingIcon = {
-                        Icon(Icons.Outlined.Search, null)
+                    onValueChange = {
+                        search = it
                     },
-                    singleLine = true
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text("جستجوی مخاطب")
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.Search,
+                            null
+                        )
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(18.dp),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .outline
+                                    .copy(alpha = 0.22f),
+                            focusedBorderColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .primary,
+                            unfocusedContainerColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .copy(alpha = 0.30f),
+                            focusedContainerColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .copy(alpha = 0.20f)
+                        )
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
-                Text(
-                    "${selected.size} مخاطب انتخاب شده",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(Modifier.height(6.dp))
-
-                LazyColumn(
-                    modifier = Modifier.weight(1f)
+                // Selected count chip
+                Surface(
+                    shape = RoundedCornerShape(50.dp),
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .primary
+                            .copy(alpha = 0.10f)
                 ) {
-                    items(
-                        filtered,
-                        key = {
-                            normalizePhone(it.phone)
-                        }
-                    ) { contact ->
-                        val key = normalizePhone(contact.phone)
-                        val checked = selected.contains(key)
+                    Row(
+                        modifier =
+                            Modifier.padding(
+                                horizontal = 12.dp,
+                                vertical = 7.dp
+                            ),
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Groups,
+                            null,
+                            modifier =
+                                Modifier.size(19.dp),
+                            tint =
+                                MaterialTheme
+                                    .colorScheme
+                                    .primary
+                        )
 
-                        ListItem(
-                            headlineContent = {
-                                Text(
-                                    contact.name.ifBlank {
-                                        contact.phone
-                                    }
-                                )
-                            },
-                            supportingContent = {
-                                Text(contact.phone)
-                            },
-                            leadingContent = {
-                                Checkbox(
-                                    checked = checked,
-                                    onCheckedChange = { value ->
-                                        if (value) {
-                                            if (!selected.contains(key)) {
-                                                selected.add(key)
-                                            }
-                                        } else {
-                                            selected.remove(key)
-                                        }
-                                    }
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                if (checked) {
-                                    selected.remove(key)
-                                } else {
-                                    selected.add(key)
-                                }
-                            }
+                        Spacer(Modifier.width(6.dp))
+
+                        Text(
+                            "${selected.size} مخاطب انتخاب شده",
+                            color =
+                                MaterialTheme
+                                    .colorScheme
+                                    .primary,
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .labelLarge
                         )
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
 
+                // Contacts card
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    shape = RoundedCornerShape(22.dp),
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .surfaceVariant
+                            .copy(alpha = 0.22f),
+                    tonalElevation = 1.dp
+                ) {
+                    if (filtered.isEmpty()) {
+                        Column(
+                            modifier =
+                                Modifier.fillMaxSize(),
+                            horizontalAlignment =
+                                Alignment.CenterHorizontally,
+                            verticalArrangement =
+                                Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.PersonSearch,
+                                null,
+                                modifier =
+                                    Modifier.size(44.dp),
+                                tint =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .onSurface
+                                        .copy(alpha = 0.38f)
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                "مخاطبی پیدا نشد",
+                                color =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .onSurface
+                                        .copy(alpha = 0.55f)
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier =
+                                Modifier.fillMaxSize(),
+                            contentPadding =
+                                PaddingValues(
+                                    vertical = 6.dp
+                                )
+                        ) {
+                            items(
+                                filtered,
+                                key = {
+                                    normalizePhone(it.phone)
+                                }
+                            ) { contact ->
+
+                                val key =
+                                    normalizePhone(
+                                        contact.phone
+                                    )
+
+                                val checked =
+                                    selected.contains(key)
+
+                                ProfessionalContactRow(
+                                    contact = contact,
+                                    checked = checked,
+                                    onToggle = {
+                                        if (checked) {
+                                            selected.remove(key)
+                                        } else {
+                                            selected.add(key)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                // Bottom actions
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    horizontalArrangement =
+                        Arrangement.spacedBy(12.dp)
                 ) {
                     SecondaryActionButton(
                         text = "انصراف",
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier.weight(1f),
+                        height = 58.dp,
                         onClick = onDismiss
                     )
 
                     PrimaryActionButton(
                         text = "ذخیره",
                         icon = Icons.Outlined.Check,
-                        enabled = name.isNotBlank() && selected.isNotEmpty(),
-                        modifier = Modifier.weight(1f),
+                        enabled =
+                            name.isNotBlank() &&
+                                selected.isNotEmpty(),
+                        modifier =
+                            Modifier.weight(1f),
+                        height = 58.dp,
                         onClick = {
-                            val map = allContacts.associateBy {
-                                normalizePhone(it.phone)
-                            }
+                            val map =
+                                allContacts
+                                    .associateBy {
+                                        normalizePhone(
+                                            it.phone
+                                        )
+                                    }
 
-                            val members = selected.mapNotNull {
-                                map[it]
-                            }
+                            val members =
+                                selected.mapNotNull {
+                                    map[it]
+                                }
 
                             onSave(
                                 group.copy(
-                                    name = name.trim(),
-                                    members = members
+                                    name =
+                                        name.trim(),
+                                    members =
+                                        members
                                 )
                             )
                         }
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfessionalContactRow(
+    contact: GroupMember,
+    checked: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(
+                horizontal = 12.dp,
+                vertical = 9.dp
+            ),
+        verticalAlignment =
+            Alignment.CenterVertically
+    ) {
+
+        ContactInitialAvatar(
+            name = contact.name,
+            phone = contact.phone
+        )
+
+        Spacer(Modifier.width(12.dp))
+
+        Column(
+            modifier =
+                Modifier.weight(1f)
+        ) {
+            Text(
+                text =
+                    contact.name.ifBlank {
+                        contact.phone
+                    },
+                style =
+                    MaterialTheme
+                        .typography
+                        .titleMedium,
+                maxLines = 1
+            )
+
+            Spacer(Modifier.height(2.dp))
+
+            Text(
+                text = contact.phone,
+                style =
+                    MaterialTheme
+                        .typography
+                        .bodyMedium,
+                color =
+                    MaterialTheme
+                        .colorScheme
+                        .onSurface
+                        .copy(alpha = 0.56f),
+                maxLines = 1
+            )
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        ModernSelectionBox(
+            checked = checked,
+            onClick = onToggle
+        )
+    }
+}
+
+@Composable
+private fun ContactInitialAvatar(
+    name: String,
+    phone: String
+) {
+    val displayName =
+        name.trim()
+
+    val initials =
+        remember(displayName) {
+            if (
+                displayName.isBlank() ||
+                normalizePhone(displayName) ==
+                    normalizePhone(phone)
+            ) {
+                ""
+            } else {
+                val words =
+                    displayName
+                        .split(
+                            Regex("\\s+")
+                        )
+                        .filter {
+                            it.isNotBlank()
+                        }
+
+                when {
+                    words.size >= 2 ->
+                        "${words[0].first()}${words[1].first()}"
+
+                    words.isNotEmpty() ->
+                        words[0]
+                            .take(2)
+
+                    else ->
+                        ""
+                }
+            }
+        }
+
+    Surface(
+        modifier =
+            Modifier.size(48.dp),
+        shape = CircleShape,
+        color =
+            MaterialTheme
+                .colorScheme
+                .primary
+                .copy(alpha = 0.10f)
+    ) {
+        Box(
+            contentAlignment =
+                Alignment.Center
+        ) {
+            if (initials.isNotBlank()) {
+                Text(
+                    text = initials,
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .primary,
+                    fontWeight =
+                        FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            } else {
+                Icon(
+                    Icons.Outlined.Person,
+                    null,
+                    tint =
+                        MaterialTheme
+                            .colorScheme
+                            .primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModernSelectionBox(
+    checked: Boolean,
+    onClick: () -> Unit
+) {
+    val shape =
+        RoundedCornerShape(10.dp)
+
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(shape)
+            .then(
+                if (checked) {
+                    Modifier.background(
+                        Brush.linearGradient(
+                            listOf(
+                                AppPurpleLight,
+                                AppPurpleDeep
+                            )
+                        )
+                    )
+                } else {
+                    Modifier
+                        .background(
+                            MaterialTheme
+                                .colorScheme
+                                .surface
+                        )
+                        .border(
+                            width = 1.4.dp,
+                            color =
+                                MaterialTheme
+                                    .colorScheme
+                                    .outline
+                                    .copy(alpha = 0.50f),
+                            shape = shape
+                        )
+                }
+            )
+            .clickable(onClick = onClick),
+        contentAlignment =
+            Alignment.Center
+    ) {
+        if (checked) {
+            Icon(
+                Icons.Outlined.Check,
+                null,
+                modifier =
+                    Modifier.size(22.dp),
+                tint = Color.White
+            )
         }
     }
 }

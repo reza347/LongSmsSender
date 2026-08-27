@@ -289,20 +289,24 @@ private fun SmsLongApp(
     val colors = if (darkTheme) {
         darkColorScheme(
             primary = AppPurpleLight,
-            background = Color(0xFF090A0F),
-            surface = Color(0xFF15171D),
-            surfaceVariant = Color(0xFF202228),
+            background = Color(0xFF0B0B10),
+            surface = Color(0xFF15151C),
+            surfaceVariant = Color(0xFF20202A),
             onBackground = Color.White,
-            onSurface = Color.White
+            onSurface = Color(0xFFF6F4FA),
+            outline = Color(0xFF77727F),
+            outlineVariant = Color(0xFF34313C)
         )
     } else {
         lightColorScheme(
             primary = AppPurple,
-            background = Color(0xFFF7F7F9),
-            surface = Color.White,
-            surfaceVariant = Color(0xFFF1EFF7),
-            onBackground = Color(0xFF161616),
-            onSurface = Color(0xFF161616)
+            background = Color(0xFFF8F7FA),
+            surface = Color(0xFFFFFFFF),
+            surfaceVariant = Color(0xFFF5F1FB),
+            onBackground = Color(0xFF17151D),
+            onSurface = Color(0xFF17151D),
+            outline = Color(0xFF85808D),
+            outlineVariant = Color(0xFFE8E3ED)
         )
     }
 
@@ -323,44 +327,41 @@ private fun SmsLongApp(
         }
     }
 
-    MaterialTheme(colorScheme = colors, typography = AppTypography) {
+    val headerTitle = when (page) {
+        Page.SEND -> "پیامک طولانی"
+        Page.GROUPS -> "گروه‌ها"
+        Page.SETTINGS -> "تنظیمات"
+    }
+
+    MaterialTheme(
+        colorScheme = colors,
+        typography = AppTypography
+    ) {
         CompositionLocalProvider(
             LocalLayoutDirection provides LayoutDirection.Rtl
         ) {
             Scaffold(
+                containerColor = MaterialTheme.colorScheme.background,
                 topBar = {
                     AppHeader(
+                        title = headerTitle,
                         darkTheme = darkTheme,
                         onToggleTheme = {
                             darkTheme = !darkTheme
                             prefs.darkTheme = darkTheme
                         },
-                        onAbout = { showAbout = true }
+                        onAbout = {
+                            showAbout = true
+                        }
                     )
                 },
                 bottomBar = {
-                    NavigationBar {
-                        NavigationBarItem(
-                            selected = page == Page.SEND,
-                            onClick = { page = Page.SEND },
-                            icon = { Icon(Icons.Outlined.Send, null) },
-                            label = { Text("ارسال") }
-                        )
-
-                        NavigationBarItem(
-                            selected = page == Page.GROUPS,
-                            onClick = { page = Page.GROUPS },
-                            icon = { Icon(Icons.Outlined.Groups, null) },
-                            label = { Text("گروه‌ها") }
-                        )
-
-                        NavigationBarItem(
-                            selected = page == Page.SETTINGS,
-                            onClick = { page = Page.SETTINGS },
-                            icon = { Icon(Icons.Outlined.Settings, null) },
-                            label = { Text("تنظیمات") }
-                        )
-                    }
+                    AppBottomBar(
+                        page = page,
+                        onPageSelected = {
+                            page = it
+                        }
+                    )
                 }
             ) { padding ->
                 Box(
@@ -376,7 +377,9 @@ private fun SmsLongApp(
                                 selectedSimId = selectedSimId,
                                 confirmBeforeSend = confirmBeforeSend,
                                 requestSmsPermission = requestSmsPermission,
-                                onOpenGroups = { page = Page.GROUPS }
+                                onOpenGroups = {
+                                    page = Page.GROUPS
+                                }
                             )
                         }
 
@@ -384,7 +387,10 @@ private fun SmsLongApp(
                             GroupsScreen(
                                 groups = groups,
                                 onSaveGroup = { group ->
-                                    val index = groups.indexOfFirst { it.id == group.id }
+                                    val index =
+                                        groups.indexOfFirst {
+                                            it.id == group.id
+                                        }
 
                                     if (index >= 0) {
                                         groups[index] = group
@@ -395,7 +401,9 @@ private fun SmsLongApp(
                                     prefs.saveGroups(groups)
                                 },
                                 onDeleteGroup = { group ->
-                                    groups.removeAll { it.id == group.id }
+                                    groups.removeAll {
+                                        it.id == group.id
+                                    }
                                     prefs.saveGroups(groups)
                                 }
                             )
@@ -412,6 +420,9 @@ private fun SmsLongApp(
                                 onConfirmChanged = {
                                     confirmBeforeSend = it
                                     prefs.confirmBeforeSend = it
+                                },
+                                onAbout = {
+                                    showAbout = true
                                 }
                             )
                         }
@@ -421,7 +432,9 @@ private fun SmsLongApp(
 
             if (showAbout) {
                 AboutAppDialog(
-                    onDismiss = { showAbout = false }
+                    onDismiss = {
+                        showAbout = false
+                    }
                 )
             }
         }
@@ -430,6 +443,7 @@ private fun SmsLongApp(
 
 @Composable
 private fun AppHeader(
+    title: String,
     darkTheme: Boolean,
     onToggleTheme: () -> Unit,
     onAbout: () -> Unit
@@ -441,26 +455,30 @@ private fun AppHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding(),
-            shadowElevation = 3.dp,
-            color = MaterialTheme.colorScheme.surface
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 2.dp
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = 14.dp),
+                    .height(72.dp)
+                    .padding(
+                        start = 18.dp,
+                        end = 20.dp
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 HeaderIconButton(
-                    icon = if (darkTheme)
-                        Icons.Outlined.LightMode
-                    else
-                        Icons.Outlined.DarkMode,
+                    icon =
+                        if (darkTheme)
+                            Icons.Outlined.LightMode
+                        else
+                            Icons.Outlined.DarkMode,
                     contentDescription = "تغییر تم",
                     onClick = onToggleTheme
                 )
 
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(10.dp))
 
                 HeaderIconButton(
                     icon = Icons.Outlined.Info,
@@ -471,9 +489,12 @@ private fun AppHeader(
                 Spacer(Modifier.weight(1f))
 
                 Text(
-                    text = "پیامک طولانی",
+                    text = title,
                     textAlign = TextAlign.End,
-                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = 25.sp,
+                    lineHeight = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
             }
@@ -530,10 +551,8 @@ private fun SendScreen(
         rememberLauncherForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-
                     context.contentResolver.query(
                         uri,
                         arrayOf(
@@ -544,7 +563,6 @@ private fun SendScreen(
                         null,
                         null
                     )?.use { cursor ->
-
                         if (cursor.moveToFirst()) {
                             val nameIndex =
                                 cursor.getColumnIndex(
@@ -580,7 +598,6 @@ private fun SendScreen(
 
     fun targetNumbers(): List<String> {
         return when (recipientMode) {
-
             RecipientMode.PERSON ->
                 listOf(phone)
                     .filter {
@@ -599,7 +616,6 @@ private fun SendScreen(
     }
 
     fun sendNow() {
-
         val targets = targetNumbers()
 
         if (targets.isEmpty()) {
@@ -624,9 +640,7 @@ private fun SendScreen(
         }
 
         requestSmsPermission {
-
             try {
-
                 targets.forEach { number ->
                     LongSmsSender.send(
                         context = context,
@@ -646,7 +660,6 @@ private fun SendScreen(
                 }
 
             } catch (e: Exception) {
-
                 scope.launch {
                     snackbar.showSnackbar(
                         e.message ?: "ارسال پیام ناموفق بود."
@@ -659,19 +672,14 @@ private fun SendScreen(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-
-        // صفحه اصلی عمداً اسکرول ندارد.
-        // ارتفاع کادر پیام با weight تنظیم می‌شود و خود TextField
-        // در صورت طولانی شدن متن، اسکرول داخلی دارد.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    horizontal = 14.dp,
-                    vertical = 8.dp
+                    horizontal = 18.dp,
+                    vertical = 10.dp
                 )
         ) {
-
             RecipientModeSelector(
                 selected = recipientMode,
                 onSelected = {
@@ -679,72 +687,72 @@ private fun SendScreen(
                 }
             )
 
-            Spacer(
-                Modifier.height(8.dp)
-            )
+            Spacer(Modifier.height(14.dp))
 
             if (recipientMode == RecipientMode.PERSON) {
-
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.elevatedCardColors(
-                            containerColor =
-                                MaterialTheme.colorScheme.surface
-                        ),
-                    elevation =
-                        CardDefaults.elevatedCardElevation(
-                            defaultElevation = 2.dp
-                        )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(92.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 5.dp,
+                    tonalElevation = 1.dp
                 ) {
-
-                    OutlinedTextField(
-                        value =
-                            if (contactName.isNotBlank())
-                                contactName
-                            else
-                                phone,
-                        onValueChange = {
-                            if (contactName.isBlank()) {
-                                phone = it
-                            }
-                        },
+                    Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                horizontal = 10.dp,
-                                vertical = 8.dp
-                            ),
-                        label = {
-                            Text(
+                            .fillMaxSize()
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(Modifier.width(8.dp))
+
+                        OutlinedTextField(
+                            value =
                                 if (contactName.isNotBlank())
-                                    "گیرنده"
+                                    contactName
                                 else
-                                    "شماره گیرنده"
-                            )
-                        },
-                        placeholder = {
-                            Text("09123456789")
-                        },
-                        singleLine = true,
-                        readOnly = contactName.isNotBlank(),
-                        keyboardOptions =
-                            KeyboardOptions(
-                                keyboardType =
-                                    KeyboardType.Phone
-                            ),
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Person,
-                                null
-                            )
-                        },
-                        trailingIcon = {
-                            Row(
-                                verticalAlignment =
-                                    Alignment.CenterVertically
-                            ) {
+                                    phone,
+                            onValueChange = {
+                                if (contactName.isBlank()) {
+                                    phone = it
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            placeholder = {
+                                Text(
+                                    "شماره گیرنده",
+                                    color =
+                                        MaterialTheme.colorScheme.onSurface
+                                            .copy(alpha = 0.55f)
+                                )
+                            },
+                            singleLine = true,
+                            readOnly = contactName.isNotBlank(),
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    keyboardType = KeyboardType.Phone
+                                ),
+                            colors =
+                                OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    disabledBorderColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent
+                                ),
+                            textStyle =
+                                MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 17.sp
+                                ),
+                            trailingIcon = {
                                 if (contactName.isNotBlank()) {
                                     IconButton(
                                         onClick = {
@@ -754,114 +762,108 @@ private fun SendScreen(
                                     ) {
                                         Icon(
                                             Icons.Outlined.Close,
-                                            "پاک کردن مخاطب"
+                                            "پاک کردن"
                                         )
                                     }
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        contactPicker.launch(
-                                            Intent(
-                                                Intent.ACTION_PICK,
-                                                ContactsContract
-                                                    .CommonDataKinds
-                                                    .Phone
-                                                    .CONTENT_URI
-                                            )
-                                        )
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Contacts,
-                                        "انتخاب مخاطب"
-                                    )
                                 }
                             }
-                        },
-                        shape =
-                            RoundedCornerShape(16.dp)
-                    )
+                        )
+
+                        Spacer(Modifier.width(8.dp))
+
+                        Surface(
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clickable {
+                                    contactPicker.launch(
+                                        Intent(
+                                            Intent.ACTION_PICK,
+                                            ContactsContract
+                                                .CommonDataKinds
+                                                .Phone
+                                                .CONTENT_URI
+                                        )
+                                    )
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            color =
+                                MaterialTheme.colorScheme.primary
+                                    .copy(alpha = 0.07f),
+                            border =
+                                androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary
+                                        .copy(alpha = 0.10f)
+                                )
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Contacts,
+                                    "انتخاب مخاطب",
+                                    modifier = Modifier.size(27.dp),
+                                    tint =
+                                        MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
                 }
-
             } else {
-
-                ElevatedCard(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(92.dp)
                         .clickable {
-
                             if (groups.isEmpty()) {
                                 onOpenGroups()
                             } else {
                                 showGroupPicker = true
                             }
                         },
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.elevatedCardColors(
-                            containerColor =
-                                MaterialTheme.colorScheme.surface
-                        ),
-                    elevation =
-                        CardDefaults.elevatedCardElevation(
-                            defaultElevation = 2.dp
-                        )
+                    shape = RoundedCornerShape(26.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 5.dp
                 ) {
-
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                horizontal = 14.dp,
-                                vertical = 10.dp
-                            ),
-                        verticalAlignment =
-                            Alignment.CenterVertically
+                            .fillMaxSize()
+                            .padding(horizontal = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         Surface(
-                            modifier =
-                                Modifier.size(42.dp),
+                            modifier = Modifier.size(48.dp),
                             shape = CircleShape,
                             color =
-                                MaterialTheme
-                                    .colorScheme
-                                    .primary
-                                    .copy(alpha = 0.12f)
+                                MaterialTheme.colorScheme.primary
+                                    .copy(alpha = 0.10f)
                         ) {
                             Box(
-                                contentAlignment =
-                                    Alignment.Center
+                                contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.Outlined.Groups,
                                     null,
                                     tint =
-                                        MaterialTheme
-                                            .colorScheme
-                                            .primary
+                                        MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
 
-                        Spacer(
-                            Modifier.width(10.dp)
-                        )
+                        Spacer(Modifier.width(12.dp))
 
                         Column(
-                            modifier =
-                                Modifier.weight(1f)
+                            modifier = Modifier.weight(1f)
                         ) {
-
                             Text(
                                 selectedGroup?.name
                                     ?: "انتخاب گروه",
-                                style =
-                                    MaterialTheme
-                                        .typography
-                                        .titleMedium
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
+
+                            Spacer(Modifier.height(1.dp))
 
                             Text(
                                 when {
@@ -874,65 +876,61 @@ private fun SendScreen(
                                     else ->
                                         "برای انتخاب لمس کنید"
                                 },
-                                style =
-                                    MaterialTheme
-                                        .typography
-                                        .bodyMedium,
+                                fontSize = 12.sp,
                                 color =
-                                    MaterialTheme
-                                        .colorScheme
-                                        .onSurface
-                                        .copy(alpha = 0.65f)
+                                    MaterialTheme.colorScheme.onSurface
+                                        .copy(alpha = 0.52f)
                             )
                         }
 
                         Icon(
                             Icons.Outlined.KeyboardArrowDown,
-                            null
+                            null,
+                            tint =
+                                MaterialTheme.colorScheme.onSurface
+                                    .copy(alpha = 0.55f)
                         )
                     }
                 }
             }
 
-            Spacer(
-                Modifier.height(10.dp)
-            )
+            Spacer(Modifier.height(14.dp))
 
-            ElevatedCard(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                shape = RoundedCornerShape(20.dp),
-                colors =
-                    CardDefaults.elevatedCardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.surface
-                    ),
-                elevation =
-                    CardDefaults.elevatedCardElevation(
-                        defaultElevation = 2.dp
-                    )
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 5.dp
             ) {
-
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(12.dp)
+                        .padding(16.dp)
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.ChatBubbleOutline,
+                            null,
+                            modifier = Modifier.size(26.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
 
-                    Text(
-                        "متن پیام",
-                        style =
-                            MaterialTheme
-                                .typography
-                                .titleMedium
-                    )
+                        Spacer(Modifier.width(8.dp))
 
-                    Spacer(
-                        Modifier.height(6.dp)
-                    )
+                        Text(
+                            "متن پیام",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
 
-                    // فقط این کادر هنگام طولانی شدن متن اسکرول می‌شود.
+                    Spacer(Modifier.height(10.dp))
+
                     OutlinedTextField(
                         value = message,
                         onValueChange = {
@@ -943,60 +941,58 @@ private fun SendScreen(
                             .weight(1f),
                         placeholder = {
                             Text(
-                                "متن طولانی خود را اینجا بنویسید..."
+                                "متن طولانی خود را اینجا بنویسید...",
+                                color =
+                                    MaterialTheme.colorScheme.onSurface
+                                        .copy(alpha = 0.50f)
                             )
                         },
                         singleLine = false,
                         minLines = 1,
                         maxLines = Int.MAX_VALUE,
                         textStyle =
-                            MaterialTheme
-                                .typography
-                                .bodyLarge,
-                        shape =
-                            RoundedCornerShape(18.dp)
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontSize = 16.sp,
+                                lineHeight = 26.sp
+                            ),
+                        shape = RoundedCornerShape(22.dp),
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor =
+                                    MaterialTheme.colorScheme.primary
+                                        .copy(alpha = 0.62f),
+                                unfocusedBorderColor =
+                                    MaterialTheme.colorScheme.outline
+                                        .copy(alpha = 0.32f),
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            )
                     )
 
-                    Spacer(
-                        Modifier.height(6.dp)
-                    )
+                    Spacer(Modifier.height(8.dp))
 
                     Text(
                         "${message.length} کاراکتر",
-                        modifier =
-                            Modifier.fillMaxWidth(),
-                        textAlign =
-                            TextAlign.End,
-                        style =
-                            MaterialTheme
-                                .typography
-                                .bodyMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End,
+                        fontSize = 13.sp,
                         color =
-                            MaterialTheme
-                                .colorScheme
-                                .onSurface
-                                .copy(alpha = 0.65f)
+                            MaterialTheme.colorScheme.onSurface
+                                .copy(alpha = 0.55f)
                     )
                 }
             }
 
-            Spacer(
-                Modifier.height(10.dp)
-            )
+            Spacer(Modifier.height(14.dp))
 
             PrimaryActionButton(
                 text = "ارسال پیام",
-                icon = Icons.Outlined.Send,
-                height = 54.dp,
-                modifier =
-                    Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
+                height = 60.dp,
                 onClick = {
-
-                    val targets =
-                        targetNumbers()
+                    val targets = targetNumbers()
 
                     when {
-
                         targets.isEmpty() -> {
                             scope.launch {
                                 snackbar.showSnackbar(
@@ -1024,55 +1020,41 @@ private fun SendScreen(
                 }
             )
 
-            Spacer(
-                Modifier.height(4.dp)
-            )
+            Spacer(Modifier.height(2.dp))
         }
 
         SnackbarHost(
             hostState = snackbar,
-            modifier =
-                Modifier.align(
-                    Alignment.BottomCenter
-                )
+            modifier = Modifier.align(
+                Alignment.BottomCenter
+            )
         )
     }
 
     if (showGroupPicker) {
-
         GroupPickerDialog(
             groups = groups,
-            selectedGroupId =
-                selectedGroupId,
+            selectedGroupId = selectedGroupId,
             onSelect = {
-                selectedGroupId =
-                    it.id
-                showGroupPicker =
-                    false
+                selectedGroupId = it.id
+                showGroupPicker = false
             },
             onDismiss = {
-                showGroupPicker =
-                    false
+                showGroupPicker = false
             }
         )
     }
 
     if (showConfirm) {
-
-        val targets =
-            targetNumbers()
+        val targets = targetNumbers()
 
         MessagePreviewDialog(
             recipientTitle =
-                if (
-                    recipientMode ==
-                    RecipientMode.GROUP
-                )
+                if (recipientMode == RecipientMode.GROUP)
                     "گروه: ${selectedGroup?.name.orEmpty()}"
                 else
                     "گیرنده: ${contactName.ifBlank { phone }}",
-            recipientCount =
-                targets.size,
+            recipientCount = targets.size,
             message = message,
             onDismiss = {
                 showConfirm = false
@@ -1128,15 +1110,17 @@ private fun GroupsScreen(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
             if (granted) {
-                val target = if (pendingCreate) {
-                    ContactGroup(
-                        id = UUID.randomUUID().toString(),
-                        name = "",
-                        members = emptyList()
-                    )
-                } else {
-                    pendingEdit
-                }
+                val target =
+                    if (pendingCreate) {
+                        ContactGroup(
+                            id =
+                                UUID.randomUUID().toString(),
+                            name = "",
+                            members = emptyList()
+                        )
+                    } else {
+                        pendingEdit
+                    }
 
                 if (target != null) {
                     loadContactsAndEdit(target)
@@ -1162,7 +1146,8 @@ private fun GroupsScreen(
         ) {
             loadContactsAndEdit(
                 group ?: ContactGroup(
-                    id = UUID.randomUUID().toString(),
+                    id =
+                        UUID.randomUUID().toString(),
                     name = "",
                     members = emptyList()
                 )
@@ -1179,58 +1164,88 @@ private fun GroupsScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(
+                horizontal = 18.dp,
+                vertical = 10.dp
+            ),
+        verticalArrangement =
+            Arrangement.spacedBy(10.dp),
+        contentPadding =
+            PaddingValues(bottom = 12.dp)
     ) {
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "گروه‌ها",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            SecondaryActionButton(
+                text = "ساخت گروه جدید",
+                icon = Icons.Outlined.Add,
+                modifier = Modifier.fillMaxWidth(),
+                height = 56.dp,
+                onClick = {
+                    openEditor(null)
+                }
+            )
 
-                PrimaryActionButton(
-                    text = "گروه جدید",
-                    icon = Icons.Outlined.GroupAdd,
-                    modifier = Modifier.widthIn(min = 132.dp),
-                    height = 46.dp,
-                    onClick = { openEditor(null) }
-                )
-            }
+            Spacer(Modifier.height(4.dp))
         }
 
         if (groups.isEmpty()) {
             item {
-                Column(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 70.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(top = 28.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 4.dp
                 ) {
-                    Icon(
-                        Icons.Outlined.Groups,
-                        null,
-                        modifier = Modifier.size(72.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = 24.dp,
+                                vertical = 34.dp
+                            ),
+                        horizontalAlignment =
+                            Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(70.dp),
+                            shape = CircleShape,
+                            color =
+                                MaterialTheme.colorScheme.primary
+                                    .copy(alpha = 0.10f)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Groups,
+                                    null,
+                                    modifier = Modifier.size(36.dp),
+                                    tint =
+                                        MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
 
-                    Spacer(Modifier.height(14.dp))
-                    Text("هنوز گروهی ساخته نشده است.")
-                    Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(14.dp))
 
-                    SecondaryActionButton(
-                        text = "ساخت اولین گروه",
-                        icon = Icons.Outlined.GroupAdd,
-                        modifier = Modifier.widthIn(min = 190.dp),
-                        onClick = { openEditor(null) }
-                    )
+                        Text(
+                            "هنوز گروهی ساخته نشده است",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        Spacer(Modifier.height(6.dp))
+
+                        Text(
+                            "برای ارسال گروهی، اولین گروه مخاطبین خود را بسازید.",
+                            textAlign = TextAlign.Center,
+                            fontSize = 13.sp,
+                            color =
+                                MaterialTheme.colorScheme.onSurface
+                                    .copy(alpha = 0.55f)
+                        )
+                    }
                 }
             }
         } else {
@@ -1238,57 +1253,16 @@ private fun GroupsScreen(
                 groups,
                 key = { it.id }
             ) { group ->
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Outlined.Groups,
-                            null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(Modifier.width(12.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                group.name,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp
-                            )
-
-                            Text(
-                                "${group.members.size} مخاطب",
-                                fontSize = 12.sp
-                            )
-                        }
-
-                        IconButton(
-                            onClick = { openEditor(group) }
-                        ) {
-                            Icon(Icons.Outlined.Edit, "ویرایش")
-                        }
-
-                        IconButton(
-                            onClick = { deleteGroup = group }
-                        ) {
-                            Icon(Icons.Outlined.Delete, "حذف")
-                        }
+                GroupListCard(
+                    group = group,
+                    onEdit = {
+                        openEditor(group)
+                    },
+                    onDelete = {
+                        deleteGroup = group
                     }
-                }
+                )
             }
-        }
-
-        item {
-            Spacer(Modifier.height(10.dp))
         }
     }
 
@@ -1296,7 +1270,9 @@ private fun GroupsScreen(
         GroupEditorDialog(
             group = group,
             contacts = contacts,
-            onDismiss = { editingGroup = null },
+            onDismiss = {
+                editingGroup = null
+            },
             onSave = {
                 onSaveGroup(it)
                 editingGroup = null
@@ -1847,7 +1823,8 @@ private fun SettingsScreen(
     selectedSimId: Int,
     onSelectedSimChanged: (Int) -> Unit,
     confirmBeforeSend: Boolean,
-    onConfirmChanged: (Boolean) -> Unit
+    onConfirmChanged: (Boolean) -> Unit,
+    onAbout: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1930,86 +1907,52 @@ private fun SettingsScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(
+                horizontal = 18.dp,
+                vertical = 10.dp
+            ),
+        verticalArrangement =
+            Arrangement.spacedBy(14.dp),
+        contentPadding =
+            PaddingValues(bottom = 18.dp)
     ) {
         item {
-            Text(
-                "تنظیمات",
-                modifier = Modifier.padding(top = 12.dp),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        item {
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { openSimPicker() },
-                shape = RoundedCornerShape(18.dp)
+            SettingsSectionCard(
+                title = "تنظیمات عمومی"
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                SettingsOptionRow(
+                    icon = Icons.Outlined.SimCard,
+                    title = "سیم‌کارت پیش‌فرض",
+                    subtitle = currentSimLabel,
+                    onClick = {
+                        openSimPicker()
+                    }
                 ) {
                     Icon(
-                        Icons.Outlined.SimCard,
+                        Icons.Outlined.KeyboardArrowLeft,
                         null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(Modifier.width(12.dp))
-
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            "سیم‌کارت پیش‌فرض",
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Text(
-                            currentSimLabel,
-                            fontSize = 12.sp
-                        )
-                    }
-
-                    Icon(
-                        Icons.Outlined.KeyboardArrowDown,
-                        null
+                        tint =
+                            MaterialTheme.colorScheme.onSurface
+                                .copy(alpha = 0.46f)
                     )
                 }
-            }
-        }
 
-        item {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            "تأیید قبل از ارسال",
-                            fontWeight = FontWeight.Bold
-                        )
+                HorizontalDivider(
+                    modifier =
+                        Modifier.padding(horizontal = 16.dp),
+                    color =
+                        MaterialTheme.colorScheme.outlineVariant
+                            .copy(alpha = 0.55f)
+                )
 
-                        Text(
-                            "قبل از ارسال، گیرنده و متن نمایش داده شود.",
-                            fontSize = 12.sp
-                        )
+                SettingsOptionRow(
+                    icon = Icons.Outlined.Verified,
+                    title = "تأیید قبل از ارسال",
+                    subtitle = "نمایش پیش‌نمایش پیام پیش از ارسال",
+                    onClick = {
+                        onConfirmChanged(!confirmBeforeSend)
                     }
-
+                ) {
                     Switch(
                         checked = confirmBeforeSend,
                         onCheckedChange = onConfirmChanged
@@ -2019,106 +1962,55 @@ private fun SettingsScreen(
         }
 
         item {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp)
+            SettingsSectionCard(
+                title = "درباره برنامه"
             ) {
-                Row(
-                    modifier = Modifier.padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                SettingsOptionRow(
+                    icon = Icons.Outlined.Info,
+                    title = "پیامک طولانی",
+                    subtitle = "نسخه 2.1",
+                    onClick = onAbout
                 ) {
                     Icon(
-                        Icons.Outlined.Info,
+                        Icons.Outlined.KeyboardArrowLeft,
                         null,
-                        tint = MaterialTheme.colorScheme.primary
+                        tint =
+                            MaterialTheme.colorScheme.onSurface
+                                .copy(alpha = 0.46f)
                     )
-
-                    Spacer(Modifier.width(12.dp))
-
-                    Column {
-                        Text(
-                            "پیامک طولانی",
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Text(
-                            "نسخه 2.1",
-                            fontSize = 12.sp
-                        )
-                    }
                 }
             }
+        }
+
+        item {
+            Text(
+                "تنظیم تم فقط از آیکن بالای برنامه انجام می‌شود.",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp,
+                color =
+                    MaterialTheme.colorScheme.onSurface
+                        .copy(alpha = 0.45f)
+            )
         }
     }
 
     if (showSimDialog) {
-        AlertDialog(
-            onDismissRequest = { showSimDialog = false },
-            title = { Text("انتخاب سیم‌کارت") },
-            text = {
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 400.dp)
-                ) {
-                    item {
-                        ListItem(
-                            headlineContent = {
-                                Text("پیش‌فرض سیستم")
-                            },
-                            leadingContent = {
-                                RadioButton(
-                                    selected =
-                                        selectedSimId ==
-                                            SubscriptionManager.INVALID_SUBSCRIPTION_ID,
-                                    onClick = {
-                                        onSelectedSimChanged(
-                                            SubscriptionManager.INVALID_SUBSCRIPTION_ID
-                                        )
-                                        showSimDialog = false
-                                    }
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                onSelectedSimChanged(
-                                    SubscriptionManager.INVALID_SUBSCRIPTION_ID
-                                )
-                                showSimDialog = false
-                            }
-                        )
-                    }
-
-                    items(
-                        sims,
-                        key = { it.subscriptionId }
-                    ) { sim ->
-                        ListItem(
-                            headlineContent = {
-                                Text("SIM ${sim.slotIndex + 1}")
-                            },
-                            supportingContent = {
-                                Text(sim.label)
-                            },
-                            leadingContent = {
-                                RadioButton(
-                                    selected = selectedSimId == sim.subscriptionId,
-                                    onClick = {
-                                        onSelectedSimChanged(sim.subscriptionId)
-                                        showSimDialog = false
-                                    }
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                onSelectedSimChanged(sim.subscriptionId)
-                                showSimDialog = false
-                            }
-                        )
-                    }
-                }
+        SimPickerDialog(
+            sims = sims,
+            selectedSimId = selectedSimId,
+            onDismiss = {
+                showSimDialog = false
             },
-            confirmButton = {}
+            onSelect = {
+                onSelectedSimChanged(it)
+                showSimDialog = false
+            }
         )
     }
 }
-
 
 @Composable
 private fun HeaderIconButton(
@@ -2126,24 +2018,551 @@ private fun HeaderIconButton(
     contentDescription: String,
     onClick: () -> Unit
 ) {
-    Box(
+    Surface(
         modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(
-                MaterialTheme
-                    .colorScheme
-                    .surfaceVariant
-                    .copy(alpha = 0.72f)
-            )
+            .size(48.dp)
             .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+        shape = CircleShape,
+        color =
+            MaterialTheme.colorScheme.surfaceVariant
+                .copy(alpha = 0.58f),
+        shadowElevation = 3.dp
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.onSurface
+        Box(
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(27.dp),
+                tint =
+                    MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppBottomBar(
+    page: Page,
+    onPageSelected: (Page) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .height(86.dp)
+                .padding(
+                    horizontal = 18.dp,
+                    vertical = 8.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppBottomItem(
+                page = Page.SEND,
+                currentPage = page,
+                icon = Icons.Outlined.Send,
+                label = "ارسال",
+                modifier = Modifier.weight(1f),
+                onClick = onPageSelected
+            )
+
+            AppBottomItem(
+                page = Page.GROUPS,
+                currentPage = page,
+                icon = Icons.Outlined.Groups,
+                label = "گروه‌ها",
+                modifier = Modifier.weight(1f),
+                onClick = onPageSelected
+            )
+
+            AppBottomItem(
+                page = Page.SETTINGS,
+                currentPage = page,
+                icon = Icons.Outlined.Settings,
+                label = "تنظیمات",
+                modifier = Modifier.weight(1f),
+                onClick = onPageSelected
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppBottomItem(
+    page: Page,
+    currentPage: Page,
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: (Page) -> Unit
+) {
+    val selected = page == currentPage
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable {
+                onClick(page)
+            },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            modifier =
+                Modifier.size(
+                    width = 72.dp,
+                    height = 40.dp
+                ),
+            shape = RoundedCornerShape(18.dp),
+            color =
+                if (selected)
+                    MaterialTheme.colorScheme.primary
+                        .copy(alpha = 0.09f)
+                else
+                    Color.Transparent
+        ) {
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(27.dp),
+                    tint =
+                        if (selected)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                                .copy(alpha = 0.70f)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(2.dp))
+
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight =
+                if (selected)
+                    FontWeight.SemiBold
+                else
+                    FontWeight.Normal,
+            color =
+                if (selected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface
+                        .copy(alpha = 0.72f)
         )
+    }
+}
+
+@Composable
+private fun GroupListCard(
+    group: ContactGroup,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 3.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 14.dp,
+                    vertical = 12.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+                color =
+                    MaterialTheme.colorScheme.primary
+                        .copy(alpha = 0.10f)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Groups,
+                        null,
+                        tint =
+                            MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    group.name,
+                    fontSize = 16.sp,
+                    lineHeight = 19.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    "${group.members.size} مخاطب",
+                    fontSize = 12.sp,
+                    lineHeight = 14.sp,
+                    color =
+                        MaterialTheme.colorScheme.onSurface
+                            .copy(alpha = 0.50f)
+                )
+            }
+
+            Box {
+                IconButton(
+                    onClick = {
+                        expanded = true
+                    }
+                ) {
+                    Icon(
+                        Icons.Outlined.MoreVert,
+                        "گزینه‌ها"
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = {
+                        expanded = false
+                    }
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("ویرایش")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Edit,
+                                null
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onEdit()
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                "حذف",
+                                color = AppDanger
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Delete,
+                                null,
+                                tint = AppDanger
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onDelete()
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionCard(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 3.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Text(
+                title,
+                modifier = Modifier.padding(
+                    start = 18.dp,
+                    end = 18.dp,
+                    top = 8.dp,
+                    bottom = 4.dp
+                ),
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SettingsOptionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    trailingContent: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(
+                horizontal = 16.dp,
+                vertical = 13.dp
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(42.dp),
+            shape = RoundedCornerShape(14.dp),
+            color =
+                MaterialTheme.colorScheme.primary
+                    .copy(alpha = 0.09f)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint =
+                        MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        Spacer(Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                title,
+                fontSize = 15.sp,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(Modifier.height(2.dp))
+
+            Text(
+                subtitle,
+                fontSize = 12.sp,
+                lineHeight = 15.sp,
+                color =
+                    MaterialTheme.colorScheme.onSurface
+                        .copy(alpha = 0.50f)
+            )
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        trailingContent()
+    }
+}
+
+@Composable
+private fun SimPickerDialog(
+    sims: List<SimOption>,
+    selectedSimId: Int,
+    onDismiss: () -> Unit,
+    onSelect: (Int) -> Unit
+) {
+    var tempSelected by remember(selectedSimId) {
+        mutableIntStateOf(selectedSimId)
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(30.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 18.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment =
+                        Alignment.CenterVertically
+                ) {
+                    Text(
+                        "انتخاب سیم‌کارت",
+                        modifier = Modifier.weight(1f),
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    HeaderIconButton(
+                        icon = Icons.Outlined.Close,
+                        contentDescription = "بستن",
+                        onClick = onDismiss
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                SimChoiceRow(
+                    title = "پیش‌فرض سیستم",
+                    subtitle = "استفاده از سیم‌کارت پیش‌فرض گوشی",
+                    selected =
+                        tempSelected ==
+                            SubscriptionManager.INVALID_SUBSCRIPTION_ID,
+                    onClick = {
+                        tempSelected =
+                            SubscriptionManager.INVALID_SUBSCRIPTION_ID
+                    }
+                )
+
+                sims.forEach { sim ->
+                    Spacer(Modifier.height(8.dp))
+
+                    SimChoiceRow(
+                        title = "SIM ${sim.slotIndex + 1}",
+                        subtitle = sim.label,
+                        selected =
+                            tempSelected ==
+                                sim.subscriptionId,
+                        onClick = {
+                            tempSelected =
+                                sim.subscriptionId
+                        }
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                PrimaryActionButton(
+                    text = "انتخاب",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        onSelect(tempSelected)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimChoiceRow(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        color =
+            if (selected)
+                MaterialTheme.colorScheme.primary
+                    .copy(alpha = 0.08f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+                    .copy(alpha = 0.32f),
+        border =
+            androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (selected)
+                    MaterialTheme.colorScheme.primary
+                        .copy(alpha = 0.35f)
+                else
+                    MaterialTheme.colorScheme.outlineVariant
+            )
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = 14.dp,
+                vertical = 12.dp
+            ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(42.dp),
+                shape = CircleShape,
+                color =
+                    MaterialTheme.colorScheme.primary
+                        .copy(alpha = 0.10f)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.SimCard,
+                        null,
+                        tint =
+                            MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    subtitle,
+                    fontSize = 12.sp,
+                    color =
+                        MaterialTheme.colorScheme.onSurface
+                            .copy(alpha = 0.50f)
+                )
+            }
+
+            RadioButton(
+                selected = selected,
+                onClick = onClick
+            )
+        }
     }
 }
 
@@ -2156,19 +2575,23 @@ private fun PrimaryActionButton(
     enabled: Boolean = true,
     height: Dp = 56.dp
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(24.dp)
 
     Box(
         modifier = modifier
             .height(height)
-            .alpha(if (enabled) 1f else 0.45f)
+            .alpha(
+                if (enabled)
+                    1f
+                else
+                    0.42f
+            )
             .clip(shape)
             .background(
                 Brush.horizontalGradient(
                     listOf(
-                        AppPurpleLight,
-                        AppPurple,
-                        AppPurpleDeep
+                        Color(0xFF8A3FFC),
+                        Color(0xFF6723D4)
                     )
                 )
             )
@@ -2187,18 +2610,18 @@ private fun PrimaryActionButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
+                    modifier = Modifier.size(21.dp),
                     tint = Color.White
                 )
 
-                Spacer(
-                    Modifier.width(8.dp)
-                )
+                Spacer(Modifier.width(7.dp))
             }
 
             Text(
                 text = text,
                 color = Color.White,
-                style = MaterialTheme.typography.labelLarge
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -2213,29 +2636,34 @@ private fun SecondaryActionButton(
     enabled: Boolean = true,
     height: Dp = 56.dp
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(22.dp)
 
-    Box(
+    Surface(
         modifier = modifier
             .height(height)
-            .alpha(if (enabled) 1f else 0.45f)
-            .clip(shape)
-            .background(
-                MaterialTheme.colorScheme.surface
-            )
-            .border(
-                width = 1.2.dp,
-                color = MaterialTheme.colorScheme.primary,
-                shape = shape
+            .alpha(
+                if (enabled)
+                    1f
+                else
+                    0.42f
             )
             .clickable(
                 enabled = enabled,
                 onClick = onClick
+            ),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surface,
+        border =
+            androidx.compose.foundation.BorderStroke(
+                1.2.dp,
+                MaterialTheme.colorScheme.primary
+                    .copy(alpha = 0.65f)
             )
-            .padding(horizontal = 18.dp),
-        contentAlignment = Alignment.Center
     ) {
         Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -2243,18 +2671,18 @@ private fun SecondaryActionButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
+                    modifier = Modifier.size(21.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
 
-                Spacer(
-                    Modifier.width(8.dp)
-                )
+                Spacer(Modifier.width(7.dp))
             }
 
             Text(
                 text = text,
                 color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelLarge
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -2310,45 +2738,47 @@ private fun RecipientModeSelector(
     selected: RecipientMode,
     onSelected: (RecipientMode) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                MaterialTheme
-                    .colorScheme
-                    .surfaceVariant
-                    .copy(alpha = 0.75f)
-            )
-            .padding(5.dp),
-        horizontalArrangement =
-            Arrangement.spacedBy(6.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color =
+            MaterialTheme.colorScheme.surfaceVariant
+                .copy(alpha = 0.70f),
+        shadowElevation = 2.dp
     ) {
-        RecipientModeItem(
-            text = "مخاطب",
-            icon = Icons.Outlined.Person,
-            selected =
-                selected == RecipientMode.PERSON,
-            modifier = Modifier.weight(1f),
-            onClick = {
-                onSelected(
-                    RecipientMode.PERSON
-                )
-            }
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(6.dp),
+            horizontalArrangement =
+                Arrangement.spacedBy(6.dp)
+        ) {
+            RecipientModeItem(
+                text = "مخاطب",
+                icon = Icons.Outlined.Person,
+                selected =
+                    selected == RecipientMode.PERSON,
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    onSelected(
+                        RecipientMode.PERSON
+                    )
+                }
+            )
 
-        RecipientModeItem(
-            text = "گروه",
-            icon = Icons.Outlined.Groups,
-            selected =
-                selected == RecipientMode.GROUP,
-            modifier = Modifier.weight(1f),
-            onClick = {
-                onSelected(
-                    RecipientMode.GROUP
-                )
-            }
-        )
+            RecipientModeItem(
+                text = "گروه",
+                icon = Icons.Outlined.Groups,
+                selected =
+                    selected == RecipientMode.GROUP,
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    onSelected(
+                        RecipientMode.GROUP
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -2360,12 +2790,11 @@ private fun RecipientModeItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val shape =
-        RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(24.dp)
 
     val baseModifier =
         modifier
-            .height(50.dp)
+            .height(58.dp)
             .clip(shape)
             .clickable(onClick = onClick)
 
@@ -2374,8 +2803,8 @@ private fun RecipientModeItem(
             baseModifier.background(
                 Brush.horizontalGradient(
                     listOf(
-                        AppPurpleLight,
-                        AppPurple
+                        Color(0xFF8A3FFC),
+                        Color(0xFF6723D4)
                     )
                 )
             )
@@ -2387,28 +2816,24 @@ private fun RecipientModeItem(
 
     Box(
         modifier = decorated,
-        contentAlignment =
-            Alignment.Center
+        contentAlignment = Alignment.Center
     ) {
         Row(
-            verticalAlignment =
-                Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
+                modifier = Modifier.size(25.dp),
                 tint =
                     if (selected)
                         Color.White
                     else
-                        MaterialTheme
-                            .colorScheme
-                            .onSurface
+                        MaterialTheme.colorScheme.onSurface
+                            .copy(alpha = 0.70f)
             )
 
-            Spacer(
-                Modifier.width(7.dp)
-            )
+            Spacer(Modifier.width(8.dp))
 
             Text(
                 text = text,
@@ -2416,13 +2841,9 @@ private fun RecipientModeItem(
                     if (selected)
                         Color.White
                     else
-                        MaterialTheme
-                            .colorScheme
-                            .onSurface,
-                style =
-                    MaterialTheme
-                        .typography
-                        .labelLarge
+                        MaterialTheme.colorScheme.onSurface,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -3015,8 +3436,6 @@ private fun MessagePreviewDialog(
 
                     PrimaryActionButton(
                         text = "ارسال پیام",
-                        icon =
-                            Icons.Outlined.Send,
                         modifier =
                             Modifier.weight(1.25f),
                         onClick =

@@ -1373,9 +1373,9 @@ private fun GroupEditorDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.92f)
-                .padding(horizontal = 18.dp),
-            shape = RoundedCornerShape(32.dp),
+                .fillMaxHeight(0.84f)
+                .padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(26.dp),
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 14.dp
         ) {
@@ -1383,8 +1383,8 @@ private fun GroupEditorDialog(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(
-                        horizontal = 18.dp,
-                        vertical = 18.dp
+                        horizontal = 14.dp,
+                        vertical = 14.dp
                     )
             ) {
 
@@ -1395,7 +1395,7 @@ private fun GroupEditorDialog(
                         Alignment.CenterVertically
                 ) {
                     Surface(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(40.dp),
                         shape = CircleShape,
                         color =
                             MaterialTheme
@@ -1422,7 +1422,7 @@ private fun GroupEditorDialog(
                         }
                     }
 
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(9.dp))
 
                     Text(
                         text =
@@ -1431,15 +1431,13 @@ private fun GroupEditorDialog(
                             else
                                 "ویرایش گروه",
                         modifier = Modifier.weight(1f),
-                        style =
-                            MaterialTheme
-                                .typography
-                                .titleLarge,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End
                     )
                 }
 
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Group name
                 OutlinedTextField(
@@ -1447,15 +1445,18 @@ private fun GroupEditorDialog(
                     onValueChange = {
                         name = it
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     label = {
-                        Text("نام گروه")
+                        Text("نام گروه", fontSize = 13.sp)
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(18.dp)
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    shape = RoundedCornerShape(15.dp)
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Search
                 OutlinedTextField(
@@ -1463,9 +1464,11 @@ private fun GroupEditorDialog(
                     onValueChange = {
                         search = it
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     placeholder = {
-                        Text("جستجوی مخاطب")
+                        Text("جستجوی مخاطب", fontSize = 13.sp)
                     },
                     leadingIcon = {
                         Icon(
@@ -1474,7 +1477,8 @@ private fun GroupEditorDialog(
                         )
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(18.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    shape = RoundedCornerShape(15.dp),
                     colors =
                         OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor =
@@ -1499,7 +1503,7 @@ private fun GroupEditorDialog(
                         )
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Selected count chip
                 Surface(
@@ -1513,8 +1517,8 @@ private fun GroupEditorDialog(
                     Row(
                         modifier =
                             Modifier.padding(
-                                horizontal = 12.dp,
-                                vertical = 7.dp
+                                horizontal = 10.dp,
+                                vertical = 5.dp
                             ),
                         verticalAlignment =
                             Alignment.CenterVertically
@@ -1523,14 +1527,14 @@ private fun GroupEditorDialog(
                             Icons.Outlined.Groups,
                             null,
                             modifier =
-                                Modifier.size(19.dp),
+                                Modifier.size(17.dp),
                             tint =
                                 MaterialTheme
                                     .colorScheme
                                     .primary
                         )
 
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(5.dp))
 
                         Text(
                             "${selected.size} مخاطب انتخاب شده",
@@ -1538,22 +1542,20 @@ private fun GroupEditorDialog(
                                 MaterialTheme
                                     .colorScheme
                                     .primary,
-                            style =
-                                MaterialTheme
-                                    .typography
-                                    .labelLarge
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Contacts card
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(18.dp),
                     color =
                         MaterialTheme
                             .colorScheme
@@ -1574,7 +1576,7 @@ private fun GroupEditorDialog(
                                 Icons.Outlined.PersonSearch,
                                 null,
                                 modifier =
-                                    Modifier.size(44.dp),
+                                    Modifier.size(30.dp),
                                 tint =
                                     MaterialTheme
                                         .colorScheme
@@ -1582,7 +1584,7 @@ private fun GroupEditorDialog(
                                         .copy(alpha = 0.38f)
                             )
 
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(6.dp))
 
                             Text(
                                 "مخاطبی پیدا نشد",
@@ -1599,7 +1601,7 @@ private fun GroupEditorDialog(
                                 Modifier.fillMaxSize(),
                             contentPadding =
                                 PaddingValues(
-                                    vertical = 6.dp
+                                    vertical = 3.dp
                                 )
                         ) {
                             items(
@@ -1633,20 +1635,20 @@ private fun GroupEditorDialog(
                     }
                 }
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Bottom actions
                 Row(
                     modifier =
                         Modifier.fillMaxWidth(),
                     horizontalArrangement =
-                        Arrangement.spacedBy(12.dp)
+                        Arrangement.spacedBy(10.dp)
                 ) {
                     SecondaryActionButton(
                         text = "انصراف",
                         modifier =
                             Modifier.weight(1f),
-                        height = 58.dp,
+                        height = 50.dp,
                         onClick = onDismiss
                     )
 
@@ -1658,7 +1660,7 @@ private fun GroupEditorDialog(
                                 selected.isNotEmpty(),
                         modifier =
                             Modifier.weight(1f),
-                        height = 58.dp,
+                        height = 50.dp,
                         onClick = {
                             val map =
                                 allContacts
@@ -1700,8 +1702,8 @@ private fun ProfessionalContactRow(
             .fillMaxWidth()
             .clickable(onClick = onToggle)
             .padding(
-                horizontal = 12.dp,
-                vertical = 9.dp
+                horizontal = 10.dp,
+                vertical = 5.dp
             ),
         verticalAlignment =
             Alignment.CenterVertically
@@ -1712,7 +1714,7 @@ private fun ProfessionalContactRow(
             phone = contact.phone
         )
 
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(9.dp))
 
         Column(
             modifier =
@@ -1723,10 +1725,8 @@ private fun ProfessionalContactRow(
                     contact.name.ifBlank {
                         contact.phone
                     },
-                style =
-                    MaterialTheme
-                        .typography
-                        .titleMedium,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1
             )
 
@@ -1734,10 +1734,7 @@ private fun ProfessionalContactRow(
 
             Text(
                 text = contact.phone,
-                style =
-                    MaterialTheme
-                        .typography
-                        .bodyMedium,
+                fontSize = 12.sp,
                 color =
                     MaterialTheme
                         .colorScheme
@@ -1747,7 +1744,7 @@ private fun ProfessionalContactRow(
             )
         }
 
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(6.dp))
 
         ModernSelectionBox(
             checked = checked,
@@ -1798,7 +1795,7 @@ private fun ContactInitialAvatar(
 
     Surface(
         modifier =
-            Modifier.size(48.dp),
+            Modifier.size(40.dp),
         shape = CircleShape,
         color =
             MaterialTheme
@@ -1819,7 +1816,7 @@ private fun ContactInitialAvatar(
                             .primary,
                     fontWeight =
                         FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 14.sp
                 )
             } else {
                 Icon(
@@ -1841,11 +1838,11 @@ private fun ModernSelectionBox(
     onClick: () -> Unit
 ) {
     val shape =
-        RoundedCornerShape(10.dp)
+        RoundedCornerShape(8.dp)
 
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(30.dp)
             .clip(shape)
             .then(
                 if (checked) {
@@ -1884,7 +1881,7 @@ private fun ModernSelectionBox(
                 Icons.Outlined.Check,
                 null,
                 modifier =
-                    Modifier.size(22.dp),
+                    Modifier.size(18.dp),
                 tint = Color.White
             )
         }

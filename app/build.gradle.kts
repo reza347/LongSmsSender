@@ -12,8 +12,11 @@ android {
         applicationId = "com.longsms.app"
         minSdk = 23
         targetSdk = 35
+
+        // First public store release.
+        // Increase versionCode for every future store update.
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         vectorDrawables {
             useSupportLibrary = true

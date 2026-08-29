@@ -699,7 +699,7 @@ private fun SendScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(62.dp),
+                        .height(56.dp),
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 3.dp

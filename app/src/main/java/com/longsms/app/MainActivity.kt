@@ -6,9 +6,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.Settings
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.widget.Toast
@@ -108,6 +110,7 @@ private val AppTypography = Typography(
 class MainActivity : ComponentActivity() {
 
     private var pendingSmsAction: (() -> Unit)? = null
+    private var showSmsPermissionGuide by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,33 +123,42 @@ class MainActivity : ComponentActivity() {
                 if (granted) {
                     pendingSmsAction?.invoke()
                 } else {
-                    Toast.makeText(
-                        this,
-                        "برای ارسال پیامک باید مجوز SMS را فعال کنید.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showSmsPermissionGuide = true
                 }
 
                 pendingSmsAction = null
             }
 
         setContent {
-            SmsLongApp { action ->
-
-                if (
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.SEND_SMS
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    action()
-                } else {
-                    pendingSmsAction = action
-                    smsPermissionLauncher.launch(
-                        Manifest.permission.SEND_SMS
+            SmsLongApp(
+                requestSmsPermission = { action ->
+                    if (
+                        ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.SEND_SMS
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        action()
+                    } else {
+                        pendingSmsAction = action
+                        smsPermissionLauncher.launch(
+                            Manifest.permission.SEND_SMS
+                        )
+                    }
+                },
+                showSmsPermissionGuide = showSmsPermissionGuide,
+                onDismissSmsPermissionGuide = {
+                    showSmsPermissionGuide = false
+                },
+                onOpenSmsSettings = {
+                    showSmsPermissionGuide = false
+                    val intent = Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:$packageName")
                     )
+                    startActivity(intent)
                 }
-            }
+            )
         }
     }
 }
@@ -271,7 +283,10 @@ private class AppPrefs(context: Context) {
 
 @Composable
 private fun SmsLongApp(
-    requestSmsPermission: ((() -> Unit)) -> Unit
+    requestSmsPermission: ((() -> Unit)) -> Unit,
+    showSmsPermissionGuide: Boolean,
+    onDismissSmsPermissionGuide: () -> Unit,
+    onOpenSmsSettings: () -> Unit
 ) {
     val context = LocalContext.current
     val prefs = remember { AppPrefs(context) }
@@ -435,6 +450,13 @@ private fun SmsLongApp(
                     onDismiss = {
                         showAbout = false
                     }
+                )
+            }
+
+            if (showSmsPermissionGuide) {
+                SmsPermissionGuideDialog(
+                    onOpenSettings = onOpenSmsSettings,
+                    onDismiss = onDismissSmsPermissionGuide
                 )
             }
         }
@@ -3537,6 +3559,112 @@ private fun DeleteGroupDialog(
                             onDelete
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmsPermissionGuideDialog(
+    onOpenSettings: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    modifier = Modifier.size(60.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Message,
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                Text(
+                    text = "فعال‌کردن دسترسی پیامک",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "برای ارسال پیامک، برنامه به مجوز SMS نیاز دارد. این دسترسی فقط زمانی استفاده می‌شود که خودتان دکمه «ارسال پیام» را بزنید.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f)
+                )
+
+                Spacer(Modifier.height(14.dp))
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp)
+                    ) {
+                        Text(
+                            text = "اگر گوشی دسترسی را محدود کرده:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Text(
+                            text = "۱. روی «رفتن به تنظیمات» بزنید.
+۲. در صفحه برنامه، منوی سه‌نقطه را باز کنید و «Allow restricted settings / اجازه تنظیمات محدود» را فعال کنید.
+۳. وارد «Permissions / مجوزها» شوید.
+۴. دسترسی «SMS» را روی «Allow / مجاز» قرار دهید.
+۵. به برنامه برگردید و دوباره ارسال را بزنید.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            lineHeight = 23.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(18.dp))
+
+                PrimaryActionButton(
+                    text = "رفتن به تنظیمات",
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Outlined.Settings,
+                    onClick = onOpenSettings
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                SecondaryActionButton(
+                    text = "فعلاً نه",
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 50.dp,
+                    onClick = onDismiss
+                )
             }
         }
     }

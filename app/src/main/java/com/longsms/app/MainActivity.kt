@@ -460,10 +460,10 @@ private fun AppHeader(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(74.dp)
+                    .height(60.dp)
                     .padding(
-                        start = 22.dp,
-                        end = 22.dp
+                        start = 16.dp,
+                        end = 18.dp
                     ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -474,15 +474,9 @@ private fun AppHeader(
                         else
                             Icons.Outlined.DarkMode,
                     contentDescription = "تغییر تم",
-                    onClick = onToggleTheme
-                )
-
-                Spacer(Modifier.width(10.dp))
-
-                HeaderIconButton(
-                    icon = Icons.Outlined.Info,
-                    contentDescription = "توضیحات",
-                    onClick = onAbout
+                    onClick = onToggleTheme,
+                    buttonSize = 36.dp,
+                    iconSize = 20.dp
                 )
 
                 Spacer(Modifier.weight(1f))
@@ -490,8 +484,8 @@ private fun AppHeader(
                 Text(
                     text = title,
                     textAlign = TextAlign.End,
-                    fontSize = 24.sp,
-                    lineHeight = 28.sp,
+                    fontSize = 22.sp,
+                    lineHeight = 26.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
@@ -1988,19 +1982,6 @@ private fun SettingsScreen(
             }
         }
 
-        item {
-            Text(
-                "تنظیم تم فقط از آیکن بالای برنامه انجام می‌شود.",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                textAlign = TextAlign.Center,
-                fontSize = 12.sp,
-                color =
-                    MaterialTheme.colorScheme.onSurface
-                        .copy(alpha = 0.45f)
-            )
-        }
     }
 
     if (showSimDialog) {
@@ -2022,13 +2003,15 @@ private fun SettingsScreen(
 private fun HeaderIconButton(
     icon: ImageVector,
     contentDescription: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    buttonSize: Dp = 44.dp,
+    iconSize: Dp = 24.dp
 ) {
     val shape = CircleShape
 
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(buttonSize)
             .shadow(
                 elevation = 2.dp,
                 shape = shape,
@@ -2054,7 +2037,7 @@ private fun HeaderIconButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(iconSize),
             tint = MaterialTheme.colorScheme.onSurface
         )
     }

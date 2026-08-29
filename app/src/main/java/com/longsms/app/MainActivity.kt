@@ -3636,11 +3636,13 @@ private fun SmsPermissionGuideDialog(
                         Spacer(Modifier.height(8.dp))
 
                         Text(
-                            text = "۱. روی «رفتن به تنظیمات» بزنید.
-۲. در صفحه برنامه، منوی سه‌نقطه را باز کنید و «Allow restricted settings / اجازه تنظیمات محدود» را فعال کنید.
-۳. وارد «Permissions / مجوزها» شوید.
-۴. دسترسی «SMS» را روی «Allow / مجاز» قرار دهید.
-۵. به برنامه برگردید و دوباره ارسال را بزنید.",
+                            text = """
+                                ۱. روی «رفتن به تنظیمات» بزنید.
+                                ۲. در صفحه برنامه، منوی سه‌نقطه را باز کنید و «Allow restricted settings / اجازه تنظیمات محدود» را فعال کنید.
+                                ۳. وارد «Permissions / مجوزها» شوید.
+                                ۴. دسترسی «SMS» را روی «Allow / مجاز» قرار دهید.
+                                ۵. به برنامه برگردید و دوباره ارسال را بزنید.
+                            """.trimIndent(),
                             style = MaterialTheme.typography.bodyMedium,
                             lineHeight = 23.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f)

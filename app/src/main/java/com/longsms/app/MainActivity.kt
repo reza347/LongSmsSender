@@ -699,21 +699,21 @@ private fun SendScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .height(70.dp),
+                    shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 3.dp
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 12.dp),
+                            .padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Person,
                             contentDescription = null,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(19.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
 
@@ -755,7 +755,7 @@ private fun SendScreen(
                                 ),
                             textStyle =
                                 MaterialTheme.typography.bodyLarge.copy(
-                                    fontSize = 15.sp
+                                    fontSize = 14.sp
                                 ),
                             trailingIcon = {
                                 if (contactName.isNotBlank()) {
@@ -778,7 +778,7 @@ private fun SendScreen(
 
                         Surface(
                             modifier = Modifier
-                                .size(42.dp)
+                                .size(36.dp)
                                 .clickable {
                                     contactPicker.launch(
                                         Intent(
@@ -790,7 +790,7 @@ private fun SendScreen(
                                         )
                                     )
                                 },
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color =
                                 MaterialTheme.colorScheme.primary
                                     .copy(alpha = 0.07f),
@@ -819,7 +819,7 @@ private fun SendScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(92.dp)
+                        .height(70.dp)
                         .clickable {
                             if (groups.isEmpty()) {
                                 onOpenGroups()
@@ -827,14 +827,14 @@ private fun SendScreen(
                                 showGroupPicker = true
                             }
                         },
-                    shape = RoundedCornerShape(26.dp),
+                    shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 5.dp
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 18.dp),
+                            .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
@@ -881,7 +881,7 @@ private fun SendScreen(
                                     else ->
                                         "برای انتخاب لمس کنید"
                                 },
-                                fontSize = 11.sp,
+                                fontSize = 10.sp,
                                 color =
                                     MaterialTheme.colorScheme.onSurface
                                         .copy(alpha = 0.52f)
@@ -891,6 +891,7 @@ private fun SendScreen(
                         Icon(
                             Icons.Outlined.KeyboardArrowDown,
                             null,
+                            modifier = Modifier.size(20.dp),
                             tint =
                                 MaterialTheme.colorScheme.onSurface
                                     .copy(alpha = 0.55f)
